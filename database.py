@@ -74,13 +74,13 @@ def view_expenses():
     cursor = connection.cursor()
 
     cursor.execute(
-        """SELECT e.name, e.amount, e.expense_date, a.name
+        """SELECT e.name, e.amount, e.date, a.name
         FROM expenses AS e
         JOIN accounts AS a
         ON a.id=e.account_id; """)
     for row in cursor.fetchall():
         print(f"Expense: {row[0]}, amount: {format(row[1], '.2f')},"
-              "date: {row[2]}, account: {row[3]}")
+              f"date: {row[2]}, account: {row[3]}")
 
     cursor.close()
     connection.close()
