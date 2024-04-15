@@ -5,6 +5,7 @@ print("""Budget Manager app.
 Enter 1 to see your budget.
 Enter 2 to add account.
 Enter 3 to add expense.
+Enter 4 to see expenses.
 Enter 0 to exit app.""")
 
 while True:
@@ -21,6 +22,8 @@ while True:
             db.view_accounts()
             account_id = pyip.inputInt("Enter account id: ")
             db.add_expense(expense_name, expense_amount, account_id)
+        case 4:
+            db.view_expenses()
         case 0:
             break
         case _:
