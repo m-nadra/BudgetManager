@@ -17,6 +17,14 @@ setup_cursor.execute("""CREATE TABLE IF NOT EXISTS expenses (
                 date DATE,
                 FOREIGN KEY (account_id) REFERENCES accounts(id))""")
 
+setup_cursor.execute("""CREATE TABLE IF NOT EXISTS incomes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                amount REAL NOT NULL,
+                account_id INTEGER NOT NULL,
+                date DATE,
+                FOREIGN KEY (account_id) REFERENCES accounts(id))""")
+
 setup_connection.commit()
 setup_cursor.close()
 setup_connection.close()
@@ -41,8 +49,12 @@ def add_account(name: str, amount: float):
     connection = sqlite3.connect('data.db')
     cursor = connection.cursor()
 
-    cursor.execute("INSERT INTO accounts (name, amount) VALUES (?, ?);",
-                   (name, amount))
+    try:
+        cursor.execute("INSERT INTO accounts (name, amount) VALUES (?, ?);",
+                       (name, amount))
+        print("Account added.")
+    except connection.Error:
+        print("Error occurred. Account not added.")
 
     connection.commit()
     cursor.close()
@@ -59,8 +71,9 @@ def add_expense(name: str, amount: float, date: str, account_id: int):
                        (name, amount, date, account_id))
         cursor.execute(
             "UPDATE accounts SET amount = amount - ? WHERE id = ?;", (amount, account_id))
+        print("Expense saved.")
     except connection.Error:
-        print("Error occurred. Rolling back changes.")
+        print("Error occurred. Expense not added.")
         connection.rollback()
 
     connection.commit()
@@ -79,7 +92,45 @@ def view_expenses():
         JOIN accounts AS a
         ON a.id=e.account_id; """)
     for row in cursor.fetchall():
-        print(f"Expense: {row[0]}, amount: {format(row[1], '.2f')},"
+        print(f"Expense: {row[0]}, amount: {format(row[1], '.2f')}, "
+              f"date: {row[2]}, account: {row[3]}")
+
+    cursor.close()
+    connection.close()
+
+
+def add_income(name: str, amount: float, date: str, account_id: int):
+    "Execute INSERT query to add new income."
+    connection = sqlite3.connect('data.db')
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute("INSERT INTO incomes (name, amount, date, account_id) VALUES (?, ?, ?, ?);",
+                       (name, amount, date, account_id))
+        cursor.execute(
+            "UPDATE accounts SET amount = amount + ? WHERE id = ?;", (amount, account_id))
+        print("Income saved.")
+    except connection.Error:
+        print("Error occurred. Income not added.")
+        connection.rollback()
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+
+def view_incomes():
+    "Execute SELECT query to view all incomes."
+    connection = sqlite3.connect('data.db')
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """SELECT i.name, i.amount, i.date, a.name
+        FROM incomes AS i
+        JOIN accounts AS a
+        ON a.id=i.account_id; """)
+    for row in cursor.fetchall():
+        print(f"Income: {row[0]}, amount: {format(row[1], '.2f')}, "
               f"date: {row[2]}, account: {row[3]}")
 
     cursor.close()

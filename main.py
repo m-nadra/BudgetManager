@@ -4,19 +4,22 @@ import os
 import pyinputplus as pyip
 import database as db
 
-
+os.system("cls")
 while True:
     print("""\nBudget Manager app.
     Enter 1 to see your budget.
     Enter 2 to add account.
     Enter 3 to add expense.
     Enter 4 to see expenses.
+    Enter 5 to add income.
+    Enter 6 to see incomes.
     Enter 0 to exit app.""")
     match pyip.inputNum("Enter number: "):
         case 1:
             os.system("cls")
             print("Displaying budget")
             db.view_accounts()
+            input("\nPress any key to back to the menu. ")
         case 2:
             os.system("cls")
             print("Adding new account")
@@ -30,7 +33,8 @@ while True:
 
             name = pyip.inputStr("Enter expense name: ")
             amount = pyip.inputFloat("Enter expense amount: ", min=0)
-            if date := input("Enter expense date (dd-mm-yyyy): (blank for today) ") == "":
+            date = input("Enter income date (dd-mm-yyyy): (blank for today) ")
+            if date == "":
                 date = datetime.datetime.now().strftime("%d-%m-%Y")
 
             db.view_accounts()
@@ -40,6 +44,25 @@ while True:
             os.system("cls")
             print("Dispalaying expenses")
             db.view_expenses()
+            input("\nPress any key to back to the menu. ")
+        case 5:
+            os.system("cls")
+            print("Adding income")
+
+            name = pyip.inputStr("Enter income name: ")
+            amount = pyip.inputFloat("Enter income amount: ", min=0)
+            date = input("Enter income date (dd-mm-yyyy): (blank for today) ")
+            if date == "":
+                date = datetime.datetime.now().strftime("%d-%m-%Y")
+
+            db.view_accounts()
+            account_id = pyip.inputInt("Enter account id: ")
+            db.add_income(name, amount, date, account_id)
+        case 6:
+            os.system("cls")
+            print("Displaying incomes")
+            db.view_incomes()
+            input("\nPress any key to back to the menu. ")
         case 0:
             break
         case _:
