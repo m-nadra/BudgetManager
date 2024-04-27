@@ -1,0 +1,17 @@
+{% extends "index.html" %}
+{% block content %}
+<table>
+    <tr>
+        <th>ID</th>
+        <th>Account Name</th>
+        <th>Balance</th>
+    </tr>
+    {% for account in accounts %}
+        <tr>
+            <td>{{account[0]}}</td>
+            <td>{{account[1]}}</td>
+            <td>{{account[2]}}</td>
+        </tr>
+    {% endfor %}
+</table>
+{% endblock %}

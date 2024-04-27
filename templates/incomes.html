@@ -1,0 +1,19 @@
+{% extends "index.html" %}
+{% block content %}
+<table>
+    <tr>
+        <th>Income name</th>
+        <th>Amount</th>
+        <th>Date</th>
+        <th>Account</th>
+    </tr>
+    {% for income in incomes %}
+        <tr>
+            <td>{{income[0]}}</td>
+            <td>{{income[1]}}</td>
+            <td>{{income[2]}}</td>
+            <td>{{income[3]}}</td>
+        </tr>
+    {% endfor %}
+</table>
+{% endblock %}

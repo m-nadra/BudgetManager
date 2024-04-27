@@ -36,12 +36,11 @@ def view_accounts():
     cursor = connection.cursor()
 
     cursor.execute("SELECT * FROM accounts;")
-    for row in cursor.fetchall():
-        print(
-            f"Account id: {row[0]}, name: {row[1]}, amount: {format(row[2], '.2f')}")
+    accounts = cursor.fetchall()
 
     cursor.close()
     connection.close()
+    return accounts
 
 
 def add_account(name: str, amount: float):
@@ -91,12 +90,11 @@ def view_expenses():
         FROM expenses AS e
         JOIN accounts AS a
         ON a.id=e.account_id; """)
-    for row in cursor.fetchall():
-        print(f"Expense: {row[0]}, amount: {format(row[1], '.2f')}, "
-              f"date: {row[2]}, account: {row[3]}")
+    expenses = cursor.fetchall()
 
     cursor.close()
     connection.close()
+    return expenses
 
 
 def add_income(name: str, amount: float, date: str, account_id: int):
@@ -129,12 +127,11 @@ def view_incomes():
         FROM incomes AS i
         JOIN accounts AS a
         ON a.id=i.account_id; """)
-    for row in cursor.fetchall():
-        print(f"Income: {row[0]}, amount: {format(row[1], '.2f')}, "
-              f"date: {row[2]}, account: {row[3]}")
+    incomes = cursor.fetchall()
 
     cursor.close()
     connection.close()
+    return incomes
 
 
 def transfer(from_account_id: int, to_account_id: int, amount: float):
