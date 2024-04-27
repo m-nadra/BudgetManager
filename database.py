@@ -135,3 +135,23 @@ def view_incomes():
 
     cursor.close()
     connection.close()
+
+
+def transfer(from_account_id: int, to_account_id: int, amount: float):
+    "Execute UPDATE query to transfer money between accounts."
+    connection = sqlite3.connect('data.db')
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute(
+            "UPDATE accounts SET amount = amount - ? WHERE id = ?;", (amount, from_account_id))
+        cursor.execute(
+            "UPDATE accounts SET amount = amount + ? WHERE id = ?;", (amount, to_account_id))
+        print("Transfer completed.")
+    except connection.Error:
+        print("Error occurred. Transfer not completed.")
+        connection.rollback()
+
+    connection.commit()
+    cursor.close()
+    connection.close()

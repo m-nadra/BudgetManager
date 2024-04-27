@@ -13,6 +13,7 @@ while True:
     Enter 4 to see expenses.
     Enter 5 to add income.
     Enter 6 to see incomes.
+    Enter 7 to transfer money between accounts.
     Enter 0 to exit app.""")
     match pyip.inputNum("Enter number: "):
         case 1:
@@ -63,6 +64,16 @@ while True:
             print("Displaying incomes")
             db.view_incomes()
             input("\nPress any key to back to the menu. ")
+        case 7:
+            os.system("cls")
+            print("Transfering money between accounts")
+
+            db.view_accounts()
+            from_account_id = pyip.inputInt("Enter from account id: ")
+            db.view_accounts()
+            to_account_id = pyip.inputInt("Enter to account id: ")
+            amount = pyip.inputFloat("Enter amount to transfer: ", min=0)
+            db.transfer(from_account_id, to_account_id, amount)
         case 0:
             break
         case _:
