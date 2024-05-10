@@ -1,0 +1,23 @@
+{% extends "index.html" %}
+{% block content %}
+<form method="POST" action="/expenses">
+    <label for="name">Expense name:</label>
+    <input type="text" id="name" name="name" required>
+    <br>
+    <label for="amount">Amount:</label>
+    <input type="number" id="amount" name="amount" required>
+    <br>
+    <label for="date">Date:</label>
+    <input type="date" id="date" name="date" required>
+    <br>
+    <label for="account">Account:</label>
+    <select id="account" name="account" required>
+        {% for account in accounts %}
+            <option value="{{account[0]}}">{{account[1]}}</option>
+        {% endfor %}
+    </select>
+    <br>
+    <input type="submit" value="Add expense">
+    <input type="reset" value="Clear">
+</form>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "index.html" %}
+{% block content %}
+<form method="POST" action="/accounts">
+    <label for="name">Account name:</label>
+    <input type="text" id="name" name="name" required>
+    <br>
+    <label for="balance">Balance:</label>
+    <input type="number" id="balance" name="balance" required>
+    <br>
+    <input type="submit" value="Add account">
+    <input type="reset" value="Clear">
+</form>
+{% endblock %}

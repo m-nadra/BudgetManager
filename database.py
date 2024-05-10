@@ -30,7 +30,7 @@ setup_cursor.close()
 setup_connection.close()
 
 
-def view_accounts():
+def view_accounts() -> list:
     "Execute SELECT query to view all accounts."
     connection = sqlite3.connect('data.db')
     cursor = connection.cursor()
@@ -80,7 +80,7 @@ def add_expense(name: str, amount: float, date: str, account_id: int):
     connection.close()
 
 
-def view_expenses():
+def view_expenses() -> list:
     "Execute SELECT query to view all expenses."
     connection = sqlite3.connect('data.db')
     cursor = connection.cursor()
@@ -117,7 +117,7 @@ def add_income(name: str, amount: float, date: str, account_id: int):
     connection.close()
 
 
-def view_incomes():
+def view_incomes() -> list:
     "Execute SELECT query to view all incomes."
     connection = sqlite3.connect('data.db')
     cursor = connection.cursor()
