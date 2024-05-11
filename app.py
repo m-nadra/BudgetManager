@@ -15,7 +15,10 @@ def accounts():
         account_name = request.form.get('name')
         account_balance = request.form.get('balance')
         db.add_account(account_name, account_balance)
-    return render_template('accounts.html', accounts=db.view_accounts())
+    try:
+        return render_template('accounts.html', accounts=db.view_accounts())
+    except Exception:
+        return render_template('accounts.html')
 
 
 @app.route('/add_account')
@@ -79,16 +82,32 @@ def edit_expense(expense_id):
     return render_template('expenses.html', expenses=db.view_expenses())
 
 
-@app.route('/delete_income/<int:income_id>', methods=['GET', 'POST'])
+@app.route('/delete_income/<int:income_id>')
 def delete_income(income_id):
     db.delete_income(income_id)
     return render_template('incomes.html', incomes=db.view_incomes())
 
 
-@app.route('/delete_expense/<int:expense_id>', methods=['GET', 'POST'])
+@app.route('/delete_expense/<int:expense_id>')
 def delete_expense(expense_id):
     db.delete_expense(expense_id)
     return render_template('expenses.html', expenses=db.view_expenses())
+
+
+@app.route('/delete_account/<int:account_id>')
+def delete_account(account_id):
+    db.delete_account(account_id)
+    return render_template('accounts.html', accounts=db.view_accounts())
+
+
+@app.route('/edit_account/<int:account_id>', methods=['GET', 'POST'])
+def edit_account(account_id):
+    if request.method == 'GET':
+        return render_template('edit_account.html', account=db.get_account(account_id))
+    name = request.form.get('name')
+    balance = request.form.get('balance')
+    db.edit_account(account_id, name, balance)
+    return render_template('accounts.html', accounts=db.view_accounts())
 
 
 if __name__ == '__main__':

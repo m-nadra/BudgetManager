@@ -1,0 +1,13 @@
+{% extends "index.html" %}
+{% block content %}
+<form method="POST" action="/edit_account/{{account[0]}}">
+    <label for="name">Account name:</label>
+    <input type="text" id="name" name="name" required value="{{account[1]}}">
+    <br>
+    <label for="balance">Balance:</label>
+    <input type="number" id="balance" name="balance" required value="{{account[2]}}">
+    <br>
+    <input type="submit" value="Edit account">
+    <input type="reset" value="Clear">
+</form>
+{% endblock %}

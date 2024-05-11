@@ -2,15 +2,16 @@
 {% block content %}
 <table>
     <tr>
-        <th>ID</th>
-        <th>Account Name</th>
+        <th>Name</th>
         <th>Balance</th>
+        <th colspan="2">Actions</th>
     </tr>
     {% for account in accounts %}
         <tr>
-            <td>{{account[0]}}</td>
             <td>{{account[1]}}</td>
             <td>{{account[2]}}</td>
+            <td><a href="/edit_account/{{account[0]}}">Edit</a></td>
+            <td><a href="/delete_account/{{account[0]}}">Delete</a></td>
         </tr>
     {% endfor %}
 </table>

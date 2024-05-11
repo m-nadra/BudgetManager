@@ -7,7 +7,7 @@ setup_cursor = setup_connection.cursor()
 setup_cursor.execute("""CREATE TABLE IF NOT EXISTS accounts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL UNIQUE,
-                amount REAL NOT NULL)""")
+                balance REAL NOT NULL)""")
 
 setup_cursor.execute("""CREATE TABLE IF NOT EXISTS expenses (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -69,7 +69,7 @@ def add_expense(name: str, amount: float, date: str, account_id: int) -> None:
         cursor.execute("INSERT INTO expenses (name, amount, date, account_id) VALUES (?, ?, ?, ?);",
                        (name, amount, date, account_id))
         cursor.execute(
-            "UPDATE accounts SET amount = amount - ? WHERE id = ?;", (amount, account_id))
+            "UPDATE accounts SET balance = balance - ? WHERE id = ?;", (amount, account_id))
         print("Expense saved.")
     except connection.Error:
         print("Error occurred. Expense not added.")
@@ -113,7 +113,7 @@ def add_income(name: str, amount: float, date: str, account_id: int):
         cursor.execute("INSERT INTO incomes (name, amount, date, account_id) VALUES (?, ?, ?, ?);",
                        (name, amount, date, account_id))
         cursor.execute(
-            "UPDATE accounts SET amount = amount + ? WHERE id = ?;", (amount, account_id))
+            "UPDATE accounts SET balance = balance + ? WHERE id = ?;", (amount, account_id))
         print("Income saved.")
     except connection.Error:
         print("Error occurred. Income not added.")
@@ -279,6 +279,49 @@ def delete_income(income_id: int) -> None:
     except connection.Error:
         connection.rollback()
 
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+
+def delete_account(account_id: int) -> None:
+    "Execute DELETE query to delete account."
+    connection = sqlite3.connect('data.db')
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute("DELETE FROM accounts WHERE id = ?;", (account_id,))
+    except connection.Error:
+        connection.rollback()
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+
+def get_account(account_id: int) -> tuple:
+    "Return single record from accounts table."
+    connection = sqlite3.connect('data.db')
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT * FROM accounts WHERE id = ?;", (account_id,))
+    account = cursor.fetchone()
+
+    cursor.close()
+    connection.close()
+    return account
+
+
+def edit_account(account_id: int, name: str, balance: float) -> None:
+    "Execute UPDATE query to edit account."
+    connection = sqlite3.connect('data.db')
+    cursor = connection.cursor()
+    try:
+        cursor.execute("UPDATE accounts SET name = ?, balance = ? WHERE id = ?;",
+                       (name, balance, account_id))
+    except connection.Error:
+        print("Error occurred. Account not updated.")
+        connection.rollback()
     connection.commit()
     cursor.close()
     connection.close()
