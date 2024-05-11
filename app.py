@@ -21,12 +21,11 @@ def accounts():
 @app.route('/expenses', methods=['GET', 'POST'])
 def expenses():
     if request.method == 'POST':
-        expense_name = request.form.get('name')
-        expense_amount = request.form.get('amount')
-        expense_date = request.form.get('date')
-        expense_account = request.form.get('account')
-        db.add_expense(expense_name, expense_amount,
-                       expense_date, expense_account)
+        name = request.form.get('name')
+        amount = request.form.get('amount')
+        date = request.form.get('date')
+        account_id = request.form.get('account')
+        db.add_expense(name, amount, date, account_id)
     return render_template('expenses.html', expenses=db.view_expenses())
 
 
@@ -37,7 +36,6 @@ def incomes():
         income_amount = request.form.get('amount')
         income_date = request.form.get('date')
         income_account = request.form.get('account')
-        print(income_name, income_amount, income_date, income_account)
         db.add_income(income_name, income_amount, income_date, income_account)
     return render_template('incomes.html', incomes=db.view_incomes())
 
@@ -55,6 +53,18 @@ def add_income():
 @app.route('/add_expense')
 def add_expense():
     return render_template('add_expense.html', accounts=db.view_accounts())
+
+
+@app.route('/edit_expense/<int:expense_id>', methods=['GET', 'POST'])
+def edit_expense(expense_id):
+    if request.method == 'GET':
+        return render_template('edit_expense.html', expense=db.get_expense(expense_id), accounts=db.view_accounts())
+    name = request.form.get('name')
+    amount = request.form.get('amount')
+    date = request.form.get('date')
+    account_id = request.form.get('account')
+    db.edit_expense(name, amount, date, account_id, expense_id)
+    return render_template('expenses.html', expenses=db.view_expenses())
 
 
 if __name__ == '__main__':

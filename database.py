@@ -6,7 +6,7 @@ setup_cursor = setup_connection.cursor()
 
 setup_cursor.execute("""CREATE TABLE IF NOT EXISTS accounts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
+                name TEXT NOT NULL UNIQUE,
                 amount REAL NOT NULL)""")
 
 setup_cursor.execute("""CREATE TABLE IF NOT EXISTS expenses (
@@ -60,7 +60,7 @@ def add_account(name: str, amount: float):
     connection.close()
 
 
-def add_expense(name: str, amount: float, date: str, account_id: int):
+def add_expense(name: str, amount: float, date: str, account_id: int) -> None:
     "Execute INSERT query to add new expense and UPDATE query to update account amount."
     connection = sqlite3.connect('data.db')
     cursor = connection.cursor()
@@ -81,12 +81,19 @@ def add_expense(name: str, amount: float, date: str, account_id: int):
 
 
 def view_expenses() -> list:
-    "Execute SELECT query to view all expenses."
+    """Execute SELECT query to view all expenses.
+        Column order:
+        [0] - Expense name
+        [1] - Expense amount
+        [2] - Expense date
+        [3] - Account name
+        [4] - Expense ID
+    """
     connection = sqlite3.connect('data.db')
     cursor = connection.cursor()
 
     cursor.execute(
-        """SELECT e.name, e.amount, e.date, a.name
+        """SELECT e.name, e.amount, e.date, a.name, e.id
         FROM expenses AS e
         JOIN accounts AS a
         ON a.id=e.account_id; """)
@@ -147,6 +154,49 @@ def transfer(from_account_id: int, to_account_id: int, amount: float):
         print("Transfer completed.")
     except connection.Error:
         print("Error occurred. Transfer not completed.")
+        connection.rollback()
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+
+def get_expense(expense_id: int) -> tuple:
+    """Return single record from expenses table.
+        Column order:
+        [0] - Expense name
+        [1] - Expense amount
+        [2] - Expense date
+        [3] - Account name
+        [4] - Expense ID
+    """
+    connection = sqlite3.connect('data.db')
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """SELECT e.name, e.amount, e.date, a.name, e.id
+        FROM expenses AS e
+        JOIN accounts AS a
+        ON a.id=e.account_id WHERE e.id = ?;""", (expense_id,))
+    expense = cursor.fetchone()
+
+    cursor.close()
+    connection.close()
+    return expense
+
+
+def edit_expense(name: str, amount: float, date: str, account_id: int, expense_id: int) -> None:
+    "Execute UPDATE query to edit expense."
+    connection = sqlite3.connect('data.db')
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute(
+            "UPDATE expenses SET name = ?, amount = ?, date = ?, account_id = ? WHERE id = ?;",
+            (name, amount, date, account_id, expense_id))
+        print("Expense updated.")
+    except connection.Error:
+        print("Error occurred. Expense not updated.")
         connection.rollback()
 
     connection.commit()
