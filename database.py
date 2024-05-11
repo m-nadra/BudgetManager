@@ -125,12 +125,19 @@ def add_income(name: str, amount: float, date: str, account_id: int):
 
 
 def view_incomes() -> list:
-    "Execute SELECT query to view all incomes."
+    """Execute SELECT query to view all incomes.
+        Column order:
+        [0] - Income name
+        [1] - Income amount
+        [2] - Income date
+        [3] - Account name
+        [4] - Income ID
+    """
     connection = sqlite3.connect('data.db')
     cursor = connection.cursor()
 
     cursor.execute(
-        """SELECT i.name, i.amount, i.date, a.name
+        """SELECT i.name, i.amount, i.date, a.name, i.id
         FROM incomes AS i
         JOIN accounts AS a
         ON a.id=i.account_id; """)
@@ -197,6 +204,79 @@ def edit_expense(name: str, amount: float, date: str, account_id: int, expense_i
         print("Expense updated.")
     except connection.Error:
         print("Error occurred. Expense not updated.")
+        connection.rollback()
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+
+def delete_expense(expense_id: int) -> None:
+    "Execute DELETE query to delete expense."
+    connection = sqlite3.connect('data.db')
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute("DELETE FROM expenses WHERE id = ?;", (expense_id,))
+    except connection.Error:
+        connection.rollback()
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+
+def get_income(income_id: int) -> tuple:
+    """Return single record from incomes table.
+        Column order:
+        [0] - Income name
+        [1] - Income amount
+        [2] - Income date
+        [3] - Account name
+        [4] - Income ID
+    """
+    connection = sqlite3.connect('data.db')
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """SELECT i.name, i.amount, i.date, a.name, i.id
+        FROM incomes AS i
+        JOIN accounts AS a
+        ON a.id=i.account_id WHERE i.id = ?;""", (income_id,))
+    income = cursor.fetchone()
+
+    cursor.close()
+    connection.close()
+    return income
+
+
+def edit_income(name: str, amount: float, date: str, account_id: int, income_id: int) -> None:
+    "Execute UPDATE query to edit income."
+    connection = sqlite3.connect('data.db')
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute(
+            "UPDATE incomes SET name = ?, amount = ?, date = ?, account_id = ? WHERE id = ?;",
+            (name, amount, date, account_id, income_id))
+        print("Income updated.")
+    except connection.Error:
+        print("Error occurred. Income not updated.")
+        connection.rollback()
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+
+def delete_income(income_id: int) -> None:
+    "Execute DELETE query to delete income."
+    connection = sqlite3.connect('data.db')
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute("DELETE FROM incomes WHERE id = ?;", (income_id,))
+    except connection.Error:
         connection.rollback()
 
     connection.commit()

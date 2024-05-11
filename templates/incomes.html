@@ -6,6 +6,7 @@
         <th>Amount</th>
         <th>Date</th>
         <th>Account</th>
+        <th colspan="2">Actions</th>
     </tr>
     {% for income in incomes %}
         <tr>
@@ -13,6 +14,8 @@
             <td>{{income[1]}}</td>
             <td>{{income[2]}}</td>
             <td>{{income[3]}}</td>
+            <td><a href="/edit_income/{{income[4]}}">Edit</a></td>
+            <td><a href="/delete_income/{{income[4]}}">Delete</a></td>
         </tr>
     {% endfor %}
 </table>
