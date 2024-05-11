@@ -43,14 +43,14 @@ def view_accounts() -> list:
     return accounts
 
 
-def add_account(name: str, amount: float):
+def add_account(name: str, balance: float):
     "Execute INSERT query to add new account."
     connection = sqlite3.connect('data.db')
     cursor = connection.cursor()
 
     try:
-        cursor.execute("INSERT INTO accounts (name, amount) VALUES (?, ?);",
-                       (name, amount))
+        cursor.execute("INSERT INTO accounts (name, balance) VALUES (?, ?);",
+                       (name, balance))
         print("Account added.")
     except connection.Error:
         print("Error occurred. Account not added.")
