@@ -52,8 +52,9 @@ def add_account(name: str, balance: float):
         cursor.execute("INSERT INTO accounts (name, balance) VALUES (?, ?);",
                        (name, balance))
         print("Account added.")
-    except connection.Error:
+    except Exception as exc:
         print("Error occurred. Account not added.")
+        raise sqlite3.Error from exc
 
     connection.commit()
     cursor.close()
@@ -322,6 +323,46 @@ def edit_account(account_id: int, name: str, balance: float) -> None:
     except connection.Error:
         print("Error occurred. Account not updated.")
         connection.rollback()
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+
+def undo_expense(expense_id: int) -> None:
+    "Execute UPDATE query to undo expense."
+    connection = sqlite3.connect('data.db')
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute(
+            """UPDATE accounts
+                SET balance = balance + (SELECT amount FROM expenses WHERE id = ?)
+                WHERE id = (SELECT account_id FROM expenses WHERE id = ?);""",
+            (expense_id, expense_id))
+        cursor.execute("DELETE FROM expenses WHERE id = ?;", (expense_id,))
+    except connection.Error:
+        connection.rollback()
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+
+def undo_income(income_id: int) -> None:
+    "Execute UPDATE query to undo income."
+    connection = sqlite3.connect('data.db')
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute(
+            """UPDATE accounts
+                SET balance = balance - (SELECT amount FROM incomes WHERE id = ?)
+                WHERE id = (SELECT account_id FROM incomes WHERE id = ?);""",
+            (income_id, income_id))
+        cursor.execute("DELETE FROM incomes WHERE id = ?;", (income_id,))
+    except connection.Error:
+        connection.rollback()
+
     connection.commit()
     cursor.close()
     connection.close()

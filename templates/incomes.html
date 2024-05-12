@@ -15,7 +15,9 @@
             <td>{{income[2]}}</td>
             <td>{{income[3]}}</td>
             <td><a href="/edit_income/{{income[4]}}">Edit</a></td>
-            <td><a href="/delete_income/{{income[4]}}">Delete</a></td>
+            <td><a href="/delete_income/{{income[4]}}">Delete entry</a></td>
+            <td><a href="/undo_income/{{income[4]}}">Delete and undo changes to your account</a></td>
+
         </tr>
     {% endfor %}
 </table>

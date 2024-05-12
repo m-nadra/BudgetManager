@@ -55,7 +55,11 @@ def accounts() -> str:
     if request.method == 'POST':
         account_name = request.form.get('name')
         account_balance = request.form.get('balance')
-        db.add_account(account_name, account_balance)
+        try:
+            db.add_account(account_name, account_balance)
+        except db.sqlite3.Error:
+            message = 'Account already exists! Accounts must have unique names.'
+            return render_template('add_account.html', message=message)
     try:
         return render_template('accounts.html', accounts=db.view_accounts())
     except db.sqlite3.OperationalError:
@@ -210,6 +214,22 @@ def delete_expense(expense_id: int) -> str:
     return render_template('expenses.html', expenses=db.view_expenses())
 
 
+@app.route('/undo_expense/<int:expense_id>', methods=['GET', 'POST'])
+def undo_expense(expense_id: int) -> str:
+    """
+    Undo an expense by its ID. Update account balance to previous state.
+
+    Parameters:
+    - expense_id (int): The ID of the expense to be undone.
+
+    Returns:
+    - str: The rendered 'expenses.html' template.
+
+    """
+    db.undo_expense(expense_id)
+    return render_template('expenses.html', expenses=db.view_expenses())
+
+
 @app.route('/incomes', methods=['GET', 'POST'])
 def incomes() -> str:
     """
@@ -296,6 +316,22 @@ def delete_income(income_id: int) -> str:
         str: The rendered 'incomes.html' template as a string.
     """
     db.delete_income(income_id)
+    return render_template('incomes.html', incomes=db.view_incomes())
+
+
+@app.route('/undo_income/<int:income_id>', methods=['GET', 'POST'])
+def undo_income(income_id: int) -> str:
+    """
+    Undo an income by its ID. Update account balance to previous state.
+
+    Parameters:
+    - income_id (int): The ID of the income to be undone.
+
+    Returns:
+    - str: The rendered 'incomes.html' template.
+
+    """
+    db.undo_income(income_id)
     return render_template('incomes.html', incomes=db.view_incomes())
 
 
