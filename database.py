@@ -30,8 +30,21 @@ setup_cursor.close()
 setup_connection.close()
 
 
-def view_accounts() -> list:
-    "Execute SELECT query to view all accounts."
+def get_all_accounts() -> list:
+    """
+    Execute SELECT query to view all accounts.
+
+    Args:
+        None
+
+    Column order:
+        [0] - id\n
+        [1] - name\n
+        [2] - balance
+
+    Returns:
+        list: A list of all accounts retrieved from the database.
+    """
     connection = sqlite3.connect('data.db')
     cursor = connection.cursor()
 
@@ -43,17 +56,24 @@ def view_accounts() -> list:
     return accounts
 
 
-def add_account(name: str, balance: float):
-    "Execute INSERT query to add new account."
+def add_account(name: str, balance: float) -> None:
+    """
+    Add new account to the database.
+    If account name already exists, raise an error.
+
+    Args:
+        name (str): Account name.
+        balance (float): Account balance.
+    Returns:
+        None
+    """
     connection = sqlite3.connect('data.db')
     cursor = connection.cursor()
 
     try:
         cursor.execute("INSERT INTO accounts (name, balance) VALUES (?, ?);",
                        (name, balance))
-        print("Account added.")
     except Exception as exc:
-        print("Error occurred. Account not added.")
         raise sqlite3.Error from exc
 
     connection.commit()
@@ -61,8 +81,155 @@ def add_account(name: str, balance: float):
     connection.close()
 
 
+def get_account(account_id: int) -> tuple:
+    """
+    Return single record from accounts table.
+
+    Args:
+        account_id (int): The ID of the account to get.
+
+    Column order:
+        [0] - Account ID\n
+        [1] - Account name\n
+        [2] - Account balance
+
+    Returns:
+        tuple: A single record from the accounts table.
+    """
+    connection = sqlite3.connect('data.db')
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT * FROM accounts WHERE id = ?;", (account_id,))
+    account = cursor.fetchone()
+
+    cursor.close()
+    connection.close()
+    return account
+
+
+def edit_account(account_id: int, name: str, balance: float) -> None:
+    """
+    Execute UPDATE query to edit account.
+
+    Args:
+        account_id (int): The ID of the account to edit.
+        name (str): The name of the account.
+        balance (float): The balance of the account.
+
+    Returns:
+        None
+    """
+    connection = sqlite3.connect('data.db')
+    cursor = connection.cursor()
+    try:
+        cursor.execute("UPDATE accounts SET name = ?, balance = ? WHERE id = ?;",
+                       (name, balance, account_id))
+    except connection.Error:
+        connection.rollback()
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+
+def delete_account(account_id: int) -> None:
+    """
+    Execute DELETE query to delete account.
+
+    Args:
+        account_id (int): The ID of the account to delete.
+
+    Returns:
+        None
+    """
+    connection = sqlite3.connect('data.db')
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute("DELETE FROM accounts WHERE id = ?;", (account_id,))
+    except connection.Error:
+        connection.rollback()
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+
+def transfer_money(from_account_id: int, to_account_id: int, amount: float):
+    """
+    Execute UPDATE query to transfer money between accounts.
+
+    Args:
+        from_account_id (int): The ID of the account to transfer from.
+        to_account_id (int): The ID of the account to transfer to.
+        amount (float): The amount to transfer.
+
+    Returns:
+        None
+    """
+    connection = sqlite3.connect('data.db')
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute(
+            "UPDATE accounts SET balance = balance - ? WHERE id = ?;", (amount, from_account_id))
+        cursor.execute(
+            "UPDATE accounts SET balance = balance + ? WHERE id = ?;", (amount, to_account_id))
+    except connection.Error:
+        connection.rollback()
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+
+def get_all_expenses() -> list:
+    """
+    Execute SELECT query to view all expenses.
+
+    Args:
+        None
+
+    Column order:
+        [0] - Expense name\n
+        [1] - Expense amount\n
+        [2] - Expense date\n
+        [3] - Account name\n
+        [4] - Expense ID
+
+    Returns:
+        list: A list of all expenses retrieved from the database.
+    """
+    connection = sqlite3.connect('data.db')
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        SELECT e.name, e.amount, e.date, a.name, e.id
+        FROM expenses AS e
+        JOIN accounts AS a
+        ON a.id=e.account_id;
+        """)
+    expenses = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+    return expenses
+
+
 def add_expense(name: str, amount: float, date: str, account_id: int) -> None:
-    "Execute INSERT query to add new expense and UPDATE query to update account amount."
+    """
+    Adds an expenses table entry to the database 
+    and reduces the account balance by the value of the expense.
+
+    Args:
+        name (str): The name of the expense.
+        amount (float): The amount of the expense.
+        date (str): The date of the expense.
+        account_id (int): The ID of the account.
+
+    Returns:
+        None
+    """
     connection = sqlite3.connect('data.db')
     cursor = connection.cursor()
 
@@ -71,97 +238,7 @@ def add_expense(name: str, amount: float, date: str, account_id: int) -> None:
                        (name, amount, date, account_id))
         cursor.execute(
             "UPDATE accounts SET balance = balance - ? WHERE id = ?;", (amount, account_id))
-        print("Expense saved.")
     except connection.Error:
-        print("Error occurred. Expense not added.")
-        connection.rollback()
-
-    connection.commit()
-    cursor.close()
-    connection.close()
-
-
-def view_expenses() -> list:
-    """Execute SELECT query to view all expenses.
-        Column order:
-        [0] - Expense name
-        [1] - Expense amount
-        [2] - Expense date
-        [3] - Account name
-        [4] - Expense ID
-    """
-    connection = sqlite3.connect('data.db')
-    cursor = connection.cursor()
-
-    cursor.execute(
-        """SELECT e.name, e.amount, e.date, a.name, e.id
-        FROM expenses AS e
-        JOIN accounts AS a
-        ON a.id=e.account_id; """)
-    expenses = cursor.fetchall()
-
-    cursor.close()
-    connection.close()
-    return expenses
-
-
-def add_income(name: str, amount: float, date: str, account_id: int):
-    "Execute INSERT query to add new income."
-    connection = sqlite3.connect('data.db')
-    cursor = connection.cursor()
-
-    try:
-        cursor.execute("INSERT INTO incomes (name, amount, date, account_id) VALUES (?, ?, ?, ?);",
-                       (name, amount, date, account_id))
-        cursor.execute(
-            "UPDATE accounts SET balance = balance + ? WHERE id = ?;", (amount, account_id))
-        print("Income saved.")
-    except connection.Error:
-        print("Error occurred. Income not added.")
-        connection.rollback()
-
-    connection.commit()
-    cursor.close()
-    connection.close()
-
-
-def view_incomes() -> list:
-    """Execute SELECT query to view all incomes.
-        Column order:
-        [0] - Income name
-        [1] - Income amount
-        [2] - Income date
-        [3] - Account name
-        [4] - Income ID
-    """
-    connection = sqlite3.connect('data.db')
-    cursor = connection.cursor()
-
-    cursor.execute(
-        """SELECT i.name, i.amount, i.date, a.name, i.id
-        FROM incomes AS i
-        JOIN accounts AS a
-        ON a.id=i.account_id; """)
-    incomes = cursor.fetchall()
-
-    cursor.close()
-    connection.close()
-    return incomes
-
-
-def transfer(from_account_id: int, to_account_id: int, amount: float):
-    "Execute UPDATE query to transfer money between accounts."
-    connection = sqlite3.connect('data.db')
-    cursor = connection.cursor()
-
-    try:
-        cursor.execute(
-            "UPDATE accounts SET amount = amount - ? WHERE id = ?;", (amount, from_account_id))
-        cursor.execute(
-            "UPDATE accounts SET amount = amount + ? WHERE id = ?;", (amount, to_account_id))
-        print("Transfer completed.")
-    except connection.Error:
-        print("Error occurred. Transfer not completed.")
         connection.rollback()
 
     connection.commit()
@@ -170,22 +247,32 @@ def transfer(from_account_id: int, to_account_id: int, amount: float):
 
 
 def get_expense(expense_id: int) -> tuple:
-    """Return single record from expenses table.
-        Column order:
-        [0] - Expense name
-        [1] - Expense amount
-        [2] - Expense date
-        [3] - Account name
+    """
+    Return single record from expenses table.
+
+    Args:
+        expense_id (int): The ID of the expense to get.
+
+    Column order:
+        [0] - Expense name\n
+        [1] - Expense amount\n
+        [2] - Expense date\n
+        [3] - Account name\n
         [4] - Expense ID
+
+    Returns:
+        tuple: A single record from the expenses table.
     """
     connection = sqlite3.connect('data.db')
     cursor = connection.cursor()
 
     cursor.execute(
-        """SELECT e.name, e.amount, e.date, a.name, e.id
+        """
+        SELECT e.name, e.amount, e.date, a.name, e.id
         FROM expenses AS e
         JOIN accounts AS a
-        ON a.id=e.account_id WHERE e.id = ?;""", (expense_id,))
+        ON a.id=e.account_id WHERE e.id = ?;
+        """, (expense_id,))
     expense = cursor.fetchone()
 
     cursor.close()
@@ -194,17 +281,30 @@ def get_expense(expense_id: int) -> tuple:
 
 
 def edit_expense(name: str, amount: float, date: str, account_id: int, expense_id: int) -> None:
-    "Execute UPDATE query to edit expense."
+    """
+    Execute UPDATE query to edit expense.
+
+    Args:
+        name (str): The name of the expense.
+        amount (float): The amount of the expense.
+        date (str): The date of the expense.
+        account_id (int): The ID of the account.
+        expense_id (int): The ID of the expense.
+
+    Returns:
+        None
+    """
     connection = sqlite3.connect('data.db')
     cursor = connection.cursor()
 
     try:
         cursor.execute(
-            "UPDATE expenses SET name = ?, amount = ?, date = ?, account_id = ? WHERE id = ?;",
-            (name, amount, date, account_id, expense_id))
-        print("Expense updated.")
+            """
+            UPDATE expenses
+            SET name = ?, amount = ?, date = ?, account_id = ?
+            WHERE id = ?;
+            """, (name, amount, date, account_id, expense_id))
     except connection.Error:
-        print("Error occurred. Expense not updated.")
         connection.rollback()
 
     connection.commit()
@@ -213,7 +313,15 @@ def edit_expense(name: str, amount: float, date: str, account_id: int, expense_i
 
 
 def delete_expense(expense_id: int) -> None:
-    "Execute DELETE query to delete expense."
+    """
+    Delete expense from the database without changing account balance.
+
+    Args:
+        expense_id (int): The ID of the expense to delete.
+
+    Returns:
+        None
+    """
     connection = sqlite3.connect('data.db')
     cursor = connection.cursor()
 
@@ -227,14 +335,108 @@ def delete_expense(expense_id: int) -> None:
     connection.close()
 
 
-def get_income(income_id: int) -> tuple:
-    """Return single record from incomes table.
-        Column order:
-        [0] - Income name
-        [1] - Income amount
-        [2] - Income date
-        [3] - Account name
+def undo_expense(expense_id: int) -> None:
+    """
+    Remove the expense from the database and add the refund to the account balance.
+
+    Args:
+        expense_id (int): The ID of the expense to undo.
+
+    Returns:
+        None
+    """
+    connection = sqlite3.connect('data.db')
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute(
+            """
+            UPDATE accounts
+            SET balance = balance + (SELECT amount FROM expenses WHERE id = ?)
+            WHERE id = (SELECT account_id FROM expenses WHERE id = ?);
+            """, (expense_id, expense_id))
+        cursor.execute("DELETE FROM expenses WHERE id = ?;", (expense_id,))
+    except connection.Error:
+        connection.rollback()
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+
+def get_all_incomes() -> list:
+    """
+    Execute SELECT query to view all incomes.
+
+    Column order:
+        [0] - Income name\n
+        [1] - Income amount\n
+        [2] - Income date\n
+        [3] - Account name\n
         [4] - Income ID
+
+    Returns:
+        list: A list of all incomes retrieved from the database.
+    """
+    connection = sqlite3.connect('data.db')
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        SELECT i.name, i.amount, i.date, a.name, i.id
+        FROM incomes AS i
+        JOIN accounts AS a
+        ON a.id=i.account_id; """)
+    incomes = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+    return incomes
+
+
+def add_income(name: str, amount: float, date: str, account_id: int):
+    """
+    Adds an entry to the incomes table in the database 
+    and increases the account balance by the value of income.
+
+    Args:
+        name (str): The name of the income.
+        amount (float): The amount of the income.
+        date (str): The date of the income.
+        account_id (int): The ID of the account.
+
+    Returns:
+        None
+    """
+    connection = sqlite3.connect('data.db')
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute("INSERT INTO incomes (name, amount, date, account_id) VALUES (?, ?, ?, ?);",
+                       (name, amount, date, account_id))
+        cursor.execute(
+            "UPDATE accounts SET balance = balance + ? WHERE id = ?;", (amount, account_id))
+    except connection.Error:
+        connection.rollback()
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+
+def get_income(income_id: int) -> tuple:
+    """
+    Return single record from incomes table.
+
+    Column order:
+        [0] - Income name\n
+        [1] - Income amount\n
+        [2] - Income date\n
+        [3] - Account name\n
+        [4] - Income ID
+
+    Returns:
+        tuple: A single record from the incomes table.
     """
     connection = sqlite3.connect('data.db')
     cursor = connection.cursor()
@@ -252,7 +454,19 @@ def get_income(income_id: int) -> tuple:
 
 
 def edit_income(name: str, amount: float, date: str, account_id: int, income_id: int) -> None:
-    "Execute UPDATE query to edit income."
+    """
+    Execute UPDATE query to edit income.
+
+    Args:
+        name (str): The name of the income.
+        amount (float): The amount of the income.
+        date (str): The date of the income.
+        account_id (int): The ID of the account.
+        income_id (int): The ID of the income.
+
+    Returns:
+        None
+    """
     connection = sqlite3.connect('data.db')
     cursor = connection.cursor()
 
@@ -260,9 +474,7 @@ def edit_income(name: str, amount: float, date: str, account_id: int, income_id:
         cursor.execute(
             "UPDATE incomes SET name = ?, amount = ?, date = ?, account_id = ? WHERE id = ?;",
             (name, amount, date, account_id, income_id))
-        print("Income updated.")
     except connection.Error:
-        print("Error occurred. Income not updated.")
         connection.rollback()
 
     connection.commit()
@@ -271,7 +483,15 @@ def edit_income(name: str, amount: float, date: str, account_id: int, income_id:
 
 
 def delete_income(income_id: int) -> None:
-    "Execute DELETE query to delete income."
+    """
+    Execute DELETE query to delete income without changing account balance.
+
+    Args:
+        income_id (int): The ID of the income to delete.
+
+    Returns:
+        None
+    """
     connection = sqlite3.connect('data.db')
     cursor = connection.cursor()
 
@@ -285,80 +505,26 @@ def delete_income(income_id: int) -> None:
     connection.close()
 
 
-def delete_account(account_id: int) -> None:
-    "Execute DELETE query to delete account."
-    connection = sqlite3.connect('data.db')
-    cursor = connection.cursor()
-
-    try:
-        cursor.execute("DELETE FROM accounts WHERE id = ?;", (account_id,))
-    except connection.Error:
-        connection.rollback()
-
-    connection.commit()
-    cursor.close()
-    connection.close()
-
-
-def get_account(account_id: int) -> tuple:
-    "Return single record from accounts table."
-    connection = sqlite3.connect('data.db')
-    cursor = connection.cursor()
-
-    cursor.execute("SELECT * FROM accounts WHERE id = ?;", (account_id,))
-    account = cursor.fetchone()
-
-    cursor.close()
-    connection.close()
-    return account
-
-
-def edit_account(account_id: int, name: str, balance: float) -> None:
-    "Execute UPDATE query to edit account."
-    connection = sqlite3.connect('data.db')
-    cursor = connection.cursor()
-    try:
-        cursor.execute("UPDATE accounts SET name = ?, balance = ? WHERE id = ?;",
-                       (name, balance, account_id))
-    except connection.Error:
-        print("Error occurred. Account not updated.")
-        connection.rollback()
-    connection.commit()
-    cursor.close()
-    connection.close()
-
-
-def undo_expense(expense_id: int) -> None:
-    "Execute UPDATE query to undo expense."
-    connection = sqlite3.connect('data.db')
-    cursor = connection.cursor()
-
-    try:
-        cursor.execute(
-            """UPDATE accounts
-                SET balance = balance + (SELECT amount FROM expenses WHERE id = ?)
-                WHERE id = (SELECT account_id FROM expenses WHERE id = ?);""",
-            (expense_id, expense_id))
-        cursor.execute("DELETE FROM expenses WHERE id = ?;", (expense_id,))
-    except connection.Error:
-        connection.rollback()
-
-    connection.commit()
-    cursor.close()
-    connection.close()
-
-
 def undo_income(income_id: int) -> None:
-    "Execute UPDATE query to undo income."
+    """
+    Remove income from the database and subtract the income amount from the account balance.
+
+    Args:
+        income_id (int): The ID of the income to undo.
+
+    Returns:
+        None
+    """
     connection = sqlite3.connect('data.db')
     cursor = connection.cursor()
 
     try:
         cursor.execute(
-            """UPDATE accounts
-                SET balance = balance - (SELECT amount FROM incomes WHERE id = ?)
-                WHERE id = (SELECT account_id FROM incomes WHERE id = ?);""",
-            (income_id, income_id))
+            """
+            UPDATE accounts
+            SET balance = balance - (SELECT amount FROM incomes WHERE id = ?)
+            WHERE id = (SELECT account_id FROM incomes WHERE id = ?);
+            """, (income_id, income_id))
         cursor.execute("DELETE FROM incomes WHERE id = ?;", (income_id,))
     except connection.Error:
         connection.rollback()
