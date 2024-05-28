@@ -10,6 +10,7 @@ Routes:
 - '/add_account' : Renders the 'add_account.html' template.
 - '/edit_account/<int:account_id>' : Handles the edit account route.
 - '/delete_account/<int:account_id>' : Handles the delete account route.
+- '/transfer_money' : Handles the transfer money route.
 - '/expenses' : Handles the expenses route.
 - '/add_expense' : Renders the 'add_expense.html' template.
 - '/edit_expense/<int:expense_id>' : Handles the edit expense route.
