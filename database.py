@@ -48,7 +48,7 @@ def get_all_accounts() -> list:
     connection = sqlite3.connect('data.db')
     cursor = connection.cursor()
 
-    cursor.execute("SELECT * FROM accounts;")
+    cursor.execute('SELECT id, name, printf("%.2f", balance) FROM accounts;')
     accounts = cursor.fetchall()
 
     cursor.close()
@@ -204,7 +204,7 @@ def get_all_expenses() -> list:
 
     cursor.execute(
         """
-        SELECT e.name, e.amount, e.date, a.name, e.id
+        SELECT e.name, printf("%.2f", e.amount), e.date, a.name, e.id
         FROM expenses AS e
         JOIN accounts AS a
         ON a.id=e.account_id;
@@ -383,7 +383,7 @@ def get_all_incomes() -> list:
 
     cursor.execute(
         """
-        SELECT i.name, i.amount, i.date, a.name, i.id
+        SELECT i.name, printf("%.2f", i.amount), i.date, a.name, i.id
         FROM incomes AS i
         JOIN accounts AS a
         ON a.id=i.account_id; """)
