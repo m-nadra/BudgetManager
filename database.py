@@ -471,6 +471,13 @@ def edit_income(name: str, amount: float, date: str, account_id: int, income_id:
     cursor = connection.cursor()
 
     try:
+        balance_change = float(get_income(income_id)[1]) - float(amount)
+        cursor.execute(
+            """
+            UPDATE accounts
+            SET balance = balance - ?
+            WHERE id = (SELECT account_id FROM incomes WHERE id = ?);
+            """, (balance_change, income_id))
         cursor.execute(
             "UPDATE incomes SET name = ?, amount = ?, date = ?, account_id = ? WHERE id = ?;",
             (name, amount, date, account_id, income_id))
