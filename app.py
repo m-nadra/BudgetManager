@@ -104,7 +104,11 @@ def edit_account(account_id: int) -> str:
         return render_template('edit_account.html', account=db.get_account(account_id))
     name = request.form.get('name')
     balance = request.form.get('balance')
-    db.edit_account(account_id, name, balance)
+    try:
+        db.edit_account(account_id, name, balance)
+    except db.sqlite3.Error:
+        message = 'Account already exists! Accounts must have unique names.'
+        return render_template('edit_account.html', account=db.get_account(account_id), message=message)
     return render_template('accounts.html', accounts=db.get_all_accounts())
 
 

@@ -1,7 +1,7 @@
 {% extends "index.html" %}
 {% block content %}
 
-<h3 style="text-align: center; padding: 10px;">Edit income form</h3>
+<h3 style="text-align: center; padding: 10px;">Edit income</h3>
 <form id="form" class="mb-3 w-75 m-auto needs-validation" method="POST" action="/edit_income/{{income[4]}}" novalidate>
     <div class="form-floating mb-3">
         <input type="text" class="form-control" id="name" name="name" value="{{income[0]}}" required>

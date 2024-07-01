@@ -1,18 +1,42 @@
 {% extends "index.html" %}
 {% block content %}
-<table>
+<script>
+    let accountId = '';
+</script>
+<table class="table table-striped table-bordered">
     <tr>
         <th>Name</th>
         <th>Balance</th>
-        <th colspan="2">Actions</th>
+        <th>Actions</th>
     </tr>
     {% for account in accounts %}
         <tr>
             <td>{{account[1]}}</td>
             <td>{{account[2]}}</td>
-            <td><a href="/edit_account/{{account[0]}}">Edit</a></td>
-            <td><a href="/delete_account/{{account[0]}}">Delete</a></td>
+            <td>
+                <a href="/edit_account/{{account[0]}}"><button class="btn btn-primary">Edit</button></a>
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" onclick="accountId = '{{account[0]}}';"">
+                    Delete
+                </button>
+            </td>
         </tr>
     {% endfor %}
 </table>
+<!-- Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="exampleModalLabel">Delete account</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            Deleting an account is irreversible and deletes all entries associated with the account. Are you sure you want to delete this account?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" onclick="window.location.href='/delete_account/' + accountId">Delete account</button>
+        </div>
+      </div>
+    </div>
+  </div>
 {% endblock %}

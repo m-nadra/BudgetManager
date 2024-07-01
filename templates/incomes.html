@@ -17,31 +17,32 @@
             <td>{{income[1]}}</td>
             <td>{{income[2]}}</td>
             <td>{{income[3]}}</td>
-            <td><a href="/edit_income/{{income[4]}}"><button class="btn btn-primary">Edit</button></a>
-                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" onclick="incomeId = '{{income[4]}}';"">
+            <td>
+              <a href="/edit_income/{{income[4]}}"><button class="btn btn-primary">Edit</button></a>
+              <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" onclick="incomeId = '{{income[4]}}';"">
                     Delete
-                </button>
+              </button>
             </td>
         </tr>
     {% endfor %}
 </table>  
 
-  <!-- Modal -->
-  <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h1 class="modal-title fs-5" id="exampleModalLabel">Delete income</h1>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          Would you like to delete only this income entry or also undo the changes to your account?
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-danger" onclick="window.location.href='/delete_income/' + incomeId">Delete entry</button>
-          <button type="button" class="btn btn-danger" onclick="window.location.href='/undo_income/' + incomeId">Delete and undo changes to your account</button>
-        </div>
+<!-- Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalLabel">Delete income</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Would you like to delete only this income entry or also undo the changes to your account?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" onclick="window.location.href='/delete_income/' + incomeId">Delete entry</button>
+        <button type="button" class="btn btn-danger" onclick="window.location.href='/undo_income/' + incomeId">Delete and undo changes to your account</button>
       </div>
     </div>
   </div>
+</div>
 {% endblock %}

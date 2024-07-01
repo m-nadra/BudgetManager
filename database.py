@@ -121,11 +121,18 @@ def edit_account(account_id: int, name: str, balance: float) -> None:
     """
     connection = sqlite3.connect('data.db')
     cursor = connection.cursor()
-    try:
-        cursor.execute("UPDATE accounts SET name = ?, balance = ? WHERE id = ?;",
-                       (name, balance, account_id))
-    except connection.Error:
-        connection.rollback()
+    if name == get_account(account_id)[1]:
+        try:
+            cursor.execute("UPDATE accounts SET balance = ? WHERE id = ?;",
+                           (balance, account_id))
+        except connection.Error:
+            connection.rollback()
+    else:
+        try:
+            cursor.execute("UPDATE accounts SET name = ?, balance = ? WHERE id = ?;",
+                           (name, balance, account_id))
+        except Exception as exc:
+            raise sqlite3.Error from exc
     connection.commit()
     cursor.close()
     connection.close()
