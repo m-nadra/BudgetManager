@@ -1,6 +1,56 @@
 {% extends "index.html" %}
 {% block content %}
-<form method="POST" action="/edit_expense/{{expense[4]}}">
+<h3 style="text-align: center; padding: 10px;">Edit expense</h3>
+<form id="form" class="mb-3 w-75 m-auto needs-validation" method="POST" action="/edit_expense/{{expense[4]}}" novalidate>
+    <div class="form-floating mb-3">
+        <input type="text" class="form-control" id="name" name="name" value="{{expense[0]}}" required>
+        <label for="name">Expense name:</label>
+        <div class="invalid-feedback">
+            Please provide expense name.
+        </div>
+    </div>
+    <div class="form-floating mb-3">
+        <input type="number" class="form-control" step="0.01" id="amount" name="amount"  value="{{expense[1]}}" required>
+        <label for="amount">Amount:</label>
+        <div class="invalid-feedback">
+            Please provide an amount.
+        </div>
+    </div>
+    <div class="form-floating mb-3">
+        <input class="form-control" type="date" id="date" name="date" value="{{expense[2]}}" required>
+        <label for="date">Date:</label>
+    </div>
+    <div class="form-floating mb-3">
+        <select class="form-select" id="account" name="account" required>
+            {% for account in accounts %}
+            <option value="{{account[0]}}" {% if account[1] == expense[3] %} selected {% endif %}>{{account[1]}}</option>
+            {% endfor %}
+        </select>
+        <label for="account">Account:</label>
+    </div>
+    <input class="btn btn-primary" type="submit" value="Edit expense">
+    <input class="btn btn-secondary" type="reset" value="Clear">
+</form>
+<script>
+    // Form Validation
+    (() => {
+    'use strict'
+
+    const forms = document.querySelectorAll('.needs-validation')
+
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+        if (!form.checkValidity()) {
+            event.preventDefault()
+            event.stopPropagation()
+        }
+
+        form.classList.add('was-validated')
+        }, false)
+    })
+    })()
+</script>
+<!-- <form method="POST" action="/edit_expense/{{expense[4]}}">
     <label for="name">Expense name:</label>
     <input type="text" id="name" name="name" required value="{{expense[0]}}">
     <br>
@@ -19,5 +69,5 @@
     <br>
     <input type="submit" value="Edit expense">
     <input type="reset" value="Clear">
-</form>
+</form> -->
 {% endblock %}

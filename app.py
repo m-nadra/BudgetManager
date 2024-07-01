@@ -10,6 +10,7 @@ Routes:
 - '/add_account' : Renders the 'add_account.html' template.
 - '/edit_account/<int:account_id>' : Handles the edit account route.
 - '/delete_account/<int:account_id>' : Handles the delete account route.
+- '/transfer_money' : Handles the transfer money route.
 - '/expenses' : Handles the expenses route.
 - '/add_expense' : Renders the 'add_expense.html' template.
 - '/edit_expense/<int:expense_id>' : Handles the edit expense route.
@@ -103,7 +104,11 @@ def edit_account(account_id: int) -> str:
         return render_template('edit_account.html', account=db.get_account(account_id))
     name = request.form.get('name')
     balance = request.form.get('balance')
-    db.edit_account(account_id, name, balance)
+    try:
+        db.edit_account(account_id, name, balance)
+    except db.sqlite3.Error:
+        message = 'Account already exists! Accounts must have unique names.'
+        return render_template('edit_account.html', account=db.get_account(account_id), message=message)
     return render_template('accounts.html', accounts=db.get_all_accounts())
 
 

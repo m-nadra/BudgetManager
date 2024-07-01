@@ -48,7 +48,7 @@ def get_all_accounts() -> list:
     connection = sqlite3.connect('data.db')
     cursor = connection.cursor()
 
-    cursor.execute("SELECT * FROM accounts;")
+    cursor.execute('SELECT id, name, printf("%.2f", balance) FROM accounts;')
     accounts = cursor.fetchall()
 
     cursor.close()
@@ -121,11 +121,18 @@ def edit_account(account_id: int, name: str, balance: float) -> None:
     """
     connection = sqlite3.connect('data.db')
     cursor = connection.cursor()
-    try:
-        cursor.execute("UPDATE accounts SET name = ?, balance = ? WHERE id = ?;",
-                       (name, balance, account_id))
-    except connection.Error:
-        connection.rollback()
+    if name == get_account(account_id)[1]:
+        try:
+            cursor.execute("UPDATE accounts SET balance = ? WHERE id = ?;",
+                           (balance, account_id))
+        except connection.Error:
+            connection.rollback()
+    else:
+        try:
+            cursor.execute("UPDATE accounts SET name = ?, balance = ? WHERE id = ?;",
+                           (name, balance, account_id))
+        except Exception as exc:
+            raise sqlite3.Error from exc
     connection.commit()
     cursor.close()
     connection.close()
@@ -204,7 +211,7 @@ def get_all_expenses() -> list:
 
     cursor.execute(
         """
-        SELECT e.name, e.amount, e.date, a.name, e.id
+        SELECT e.name, printf("%.2f", e.amount), e.date, a.name, e.id
         FROM expenses AS e
         JOIN accounts AS a
         ON a.id=e.account_id;
@@ -383,7 +390,7 @@ def get_all_incomes() -> list:
 
     cursor.execute(
         """
-        SELECT i.name, i.amount, i.date, a.name, i.id
+        SELECT i.name, printf("%.2f", i.amount), i.date, a.name, i.id
         FROM incomes AS i
         JOIN accounts AS a
         ON a.id=i.account_id; """)
@@ -471,6 +478,13 @@ def edit_income(name: str, amount: float, date: str, account_id: int, income_id:
     cursor = connection.cursor()
 
     try:
+        balance_change = float(get_income(income_id)[1]) - float(amount)
+        cursor.execute(
+            """
+            UPDATE accounts
+            SET balance = balance - ?
+            WHERE id = (SELECT account_id FROM incomes WHERE id = ?);
+            """, (balance_change, income_id))
         cursor.execute(
             "UPDATE incomes SET name = ?, amount = ?, date = ?, account_id = ? WHERE id = ?;",
             (name, amount, date, account_id, income_id))
