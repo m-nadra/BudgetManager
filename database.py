@@ -1,110 +1,102 @@
 "Contains functions to interact with the database."
 import sqlite3
 
-setup_connection = sqlite3.connect('data.db')
-setup_cursor = setup_connection.cursor()
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import IntegrityError
 
-setup_cursor.execute("""CREATE TABLE IF NOT EXISTS accounts (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL UNIQUE,
-                balance REAL NOT NULL)""")
-
-setup_cursor.execute("""CREATE TABLE IF NOT EXISTS expenses (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                amount REAL NOT NULL,
-                account_id INTEGER NOT NULL,
-                date DATE,
-                FOREIGN KEY (account_id) REFERENCES accounts(id))""")
-
-setup_cursor.execute("""CREATE TABLE IF NOT EXISTS incomes (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                amount REAL NOT NULL,
-                account_id INTEGER NOT NULL,
-                date DATE,
-                FOREIGN KEY (account_id) REFERENCES accounts(id))""")
-
-setup_connection.commit()
-setup_cursor.close()
-setup_connection.close()
+engine = create_engine('sqlite:///data.db', echo=True)
+Base = declarative_base()
+Base.metadata.create_all(engine)
+Session = sessionmaker(bind=engine)
 
 
-def get_all_accounts() -> list:
+class Account(Base):
+    __tablename__ = 'accounts'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, nullable=False, unique=True)
+    balance = Column(Float, nullable=False)
+
+    def __init__(self, name, balance, id=None):
+        self.id = id
+        self.name = name
+        self.balance = balance
+
+    def addToDatabase(self) -> None:
+        """
+        Add new account to the database.
+        If account name already exists, raise an error.
+        """
+        session = Session()
+        try:
+            session.add(self)
+            session.commit()
+        except IntegrityError as err:
+            session.rollback()
+            raise err
+        finally:
+            session.close()
+
+    @classmethod
+    def importFromDatabase(cls, accountId: int) -> object:
+        """
+        Create an Account object from the database.
+
+        Args:
+            accountId (int): The ID of the account to import.
+
+        Returns: 
+            Account object
+        """
+        session = Session()
+        try:
+            account = session.query(Account).filter_by(
+                id=accountId).one_or_none()
+            if account is None:
+                raise ValueError
+            return cls(account.name, account.balance, account.id)
+        finally:
+            session.close()
+
+
+def getAllAccountsFromDatabase() -> list:
     """
-    Execute SELECT query to view all accounts.
+    Return list of all accounts from the database.
 
-    Args:
-        None
-
-    Column order:
-        [0] - id\n
-        [1] - name\n
-        [2] - balance
-
-    Returns:
-        list: A list of all accounts retrieved from the database.
+    Columns in the table: id, name, balance
     """
-    connection = sqlite3.connect('data.db')
-    cursor = connection.cursor()
-
-    cursor.execute('SELECT id, name, printf("%.2f", balance) FROM accounts;')
-    accounts = cursor.fetchall()
-
-    cursor.close()
-    connection.close()
+    session = Session()
+    accounts = session.query(Account).all()
+    session.close()
     return accounts
 
 
-def add_account(name: str, balance: float) -> None:
-    """
-    Add new account to the database.
-    If account name already exists, raise an error.
+# def get_account(account_id: int) -> tuple:
+#     """
+#     Return single record from accounts table.
 
-    Args:
-        name (str): Account name.
-        balance (float): Account balance.
-    Returns:
-        None
-    """
-    connection = sqlite3.connect('data.db')
-    cursor = connection.cursor()
+#     Args:
+#         account_id (int): The ID of the account to get.
 
-    try:
-        cursor.execute("INSERT INTO accounts (name, balance) VALUES (?, ?);",
-                       (name, balance))
-    except Exception as exc:
-        raise sqlite3.Error from exc
+#     Column order:
+#         [0] - Account ID\n
+#         [1] - Account name\n
+#         [2] - Account balance
 
-    connection.commit()
-    cursor.close()
-    connection.close()
+#     Returns:
+#         tuple: A single record from the accounts table.
+#     """
+#     connection = sqlite3.connect('data.db')
+#     cursor = connection.cursor()
 
+#     cursor.execute("SELECT * FROM accounts WHERE id = ?;", (account_id,))
+#     account = cursor.fetchone()
 
-def get_account(account_id: int) -> tuple:
-    """
-    Return single record from accounts table.
-
-    Args:
-        account_id (int): The ID of the account to get.
-
-    Column order:
-        [0] - Account ID\n
-        [1] - Account name\n
-        [2] - Account balance
-
-    Returns:
-        tuple: A single record from the accounts table.
-    """
-    connection = sqlite3.connect('data.db')
-    cursor = connection.cursor()
-
-    cursor.execute("SELECT * FROM accounts WHERE id = ?;", (account_id,))
-    account = cursor.fetchone()
-
-    cursor.close()
-    connection.close()
-    return account
+#     cursor.close()
+#     connection.close()
+#     return account
 
 
 def edit_account(account_id: int, name: str, balance: float) -> None:
@@ -121,7 +113,7 @@ def edit_account(account_id: int, name: str, balance: float) -> None:
     """
     connection = sqlite3.connect('data.db')
     cursor = connection.cursor()
-    if name == get_account(account_id)[1]:
+    if name == Account.importFromDatabase(account_id).name:
         try:
             cursor.execute("UPDATE accounts SET balance = ? WHERE id = ?;",
                            (balance, account_id))
@@ -138,27 +130,37 @@ def edit_account(account_id: int, name: str, balance: float) -> None:
     connection.close()
 
 
-def delete_account(account_id: int) -> None:
+def deleteAccountFromDatabase(accountId: int) -> None:
     """
-    Execute DELETE query to delete account.
-
-    Args:
-        account_id (int): The ID of the account to delete.
-
-    Returns:
-        None
+    Delete account with the given ID from the database.
     """
-    connection = sqlite3.connect('data.db')
-    cursor = connection.cursor()
-
+    session = Session()
     try:
-        cursor.execute("DELETE FROM accounts WHERE id = ?;", (account_id,))
-    except connection.Error:
-        connection.rollback()
+        account = session.query(Account).filter(Account.id == accountId).one()
+        if account is None:
+            raise ValueError
+        session.delete(account)
+        session.commit()
+    finally:
+        session.close()
 
-    connection.commit()
-    cursor.close()
-    connection.close()
+
+class Expense(Base):
+    __tablename__ = 'expenses'
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    amount = Column(Float, nullable=False)
+    account_id = Column(Integer, ForeignKey('accounts.id'), nullable=False)
+    date = Column(Date, nullable=False)
+
+
+class Income(Base):
+    __tablename__ = 'incomes'
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    amount = Column(Float, nullable=False)
+    account_id = Column(Integer, ForeignKey('accounts.id'), nullable=False)
+    date = Column(Date, nullable=False)
 
 
 def transfer_money(from_account_id: int, to_account_id: int, amount: float):

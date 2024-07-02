@@ -11,11 +11,11 @@
     </tr>
     {% for account in accounts %}
         <tr>
-            <td>{{account[1]}}</td>
-            <td>{{account[2]}}</td>
+            <td>{{ account.name }}</td>
+            <td>{{ account.balance }}</td>
             <td>
-                <a href="/edit_account/{{account[0]}}"><button class="btn btn-primary">Edit</button></a>
-                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" onclick="accountId = '{{account[0]}}';"">
+                <a href="/edit_account/{{account.id}}"><button class="btn btn-primary">Edit</button></a>
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" onclick="accountId = '{{account.id}}';"">
                     Delete
                 </button>
             </td>

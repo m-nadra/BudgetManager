@@ -1,16 +1,16 @@
 {% extends "index.html" %}
 {% block content %}
 <h3 style="text-align: center; padding: 10px;">Edit account form</h3>
-<form id="form" class="mb-3 w-75 m-auto needs-validation" method="POST" action="/edit_account/{{account[0]}}" novalidate>
+<form id="form" class="mb-3 w-75 m-auto needs-validation" method="POST" action="/edit_account/{{ account.id }}" novalidate>
     <div class="form-floating mb-3">
-        <input type="text" class="form-control" id="name" name="name" value="{{account[1]}}" required>
+        <input type="text" class="form-control" id="name" name="name" value="{{ account.name }}" required>
         <label for="name">Account name:</label>
         <div class="invalid-feedback">
             Please provide account name.
         </div>
     </div>
     <div class="form-floating mb-3">
-        <input type="number" class="form-control" step="0.01" id="balance" name="balance" value="{{account[2]}}" required>
+        <input type="number" class="form-control" step="0.01" id="balance" name="balance" value="{{ account.balance }}" required>
         <label for="balance">Balance:</label>
         <div class="invalid-feedback">
             Please provide a balance.

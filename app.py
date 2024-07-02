@@ -56,16 +56,17 @@ def accounts() -> str:
         str: The rendered 'accounts.html' template as a string.
     """
     if request.method == 'POST':
-        account_name = request.form.get('name')
-        account_balance = request.form.get('balance')
+        name = request.form.get('name')
+        balance = request.form.get('balance')
         try:
-            db.add_account(account_name, account_balance)
-        except db.sqlite3.Error:
+            account = db.Account(name, balance)
+            account.addToDatabase()
+        except db.IntegrityError:
             message = 'Account already exists! Accounts must have unique names.'
             return render_template('add_account.html', message=message)
     try:
-        return render_template('accounts.html', accounts=db.get_all_accounts())
-    except db.sqlite3.OperationalError:
+        return render_template('accounts.html', accounts=db.getAllAccountsFromDatabase())
+    except db.sqlite3.Error:
         return render_template('accounts.html')
 
 
@@ -101,15 +102,15 @@ def edit_account(account_id: int) -> str:
         str: The rendered 'accounts.html' template as a string.
     """
     if request.method == 'GET':
-        return render_template('edit_account.html', account=db.get_account(account_id))
+        return render_template('edit_account.html', account=db.Account.importFromDatabase(account_id))
     name = request.form.get('name')
     balance = request.form.get('balance')
     try:
         db.edit_account(account_id, name, balance)
     except db.sqlite3.Error:
         message = 'Account already exists! Accounts must have unique names.'
-        return render_template('edit_account.html', account=db.get_account(account_id), message=message)
-    return render_template('accounts.html', accounts=db.get_all_accounts())
+        return render_template('edit_account.html', account=db.Account.importFromDatabase(account_id), message=message)
+    return render_template('accounts.html', accounts=db.getAllAccountsFromDatabase())
 
 
 @app.route('/delete_account/<int:account_id>')
@@ -128,8 +129,8 @@ def delete_account(account_id: int) -> str:
     Returns:
         str: The rendered 'accounts.html' template as a string.
     """
-    db.delete_account(account_id)
-    return render_template('accounts.html', accounts=db.get_all_accounts())
+    db.deleteAccountFromDatabase(account_id)
+    return render_template('accounts.html', accounts=db.getAllAccountsFromDatabase())
 
 
 @app.route('/transfer_money', methods=['GET', 'POST'])
@@ -150,8 +151,8 @@ def transfer_money() -> str:
         to_account_id = request.form.get('to_account')
         amount = request.form.get('amount')
         db.transfer_money(from_account_id, to_account_id, amount)
-        return render_template('accounts.html', accounts=db.get_all_accounts())
-    return render_template('transfer_money.html', accounts=db.get_all_accounts())
+        return render_template('accounts.html', accounts=db.getAllAccountsFromDatabase())
+    return render_template('transfer_money.html', accounts=db.getAllAccountsFromDatabase())
 
 
 @app.route('/expenses', methods=['GET', 'POST'])
@@ -189,7 +190,7 @@ def add_expense() -> str:
     Returns:
         str: The rendered template.
     """
-    return render_template('add_expense.html', accounts=db.get_all_accounts())
+    return render_template('add_expense.html', accounts=db.getAllAccountsFromDatabase())
 
 
 @app.route('/edit_expense/<int:expense_id>', methods=['GET', 'POST'])
@@ -214,7 +215,7 @@ def edit_expense(expense_id: int) -> str:
     """
     if request.method == 'GET':
         return render_template('edit_expense.html', expense=db.get_expense(expense_id),
-                               accounts=db.get_all_accounts())
+                               accounts=db.getAllAccountsFromDatabase())
     name = request.form.get('name')
     amount = request.form.get('amount')
     date = request.form.get('date')
@@ -294,7 +295,7 @@ def add_income() -> str:
     Returns:
         str: The rendered template.
     """
-    return render_template('add_income.html', accounts=db.get_all_accounts())
+    return render_template('add_income.html', accounts=db.getAllAccountsFromDatabase())
 
 
 @app.route('/edit_income/<int:income_id>', methods=['GET', 'POST'])
@@ -319,7 +320,7 @@ def edit_income(income_id: int) -> str:
     """
     if request.method == 'GET':
         return render_template('edit_income.html', income=db.get_income(income_id),
-                               accounts=db.get_all_accounts())
+                               accounts=db.getAllAccountsFromDatabase())
     name = request.form.get('name')
     amount = request.form.get('amount')
     date = request.form.get('date')
