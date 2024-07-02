@@ -39,6 +39,47 @@ class Account(Base):
         finally:
             session.close()
 
+    def edit(self, name: str, balance: float) -> None:
+        """
+        Execute UPDATE query to edit account.
+
+        Args:
+            account_id (int): The ID of the account to edit.
+            name (str): The name of the account.
+            balance (float): The balance of the account.
+
+        Returns:
+            None
+        """
+        session = Session()
+        if self.name != name:  # Prevent blocking query when name is not changed
+            self.name = name
+        self.balance = balance
+        try:
+            session.query(Account).filter(Account.id == self.id).update(
+                {'name': self.name, 'balance': self.balance})
+            session.commit()
+        except IntegrityError as err:
+            session.rollback()
+            raise err
+        finally:
+            session.close()
+
+    def deleteFromDatabase(self) -> None:
+        """
+        Delete account with the given ID from the database.
+        """
+        session = Session()
+        try:
+            account = session.query(Account).filter(
+                Account.id == self.id).one()
+            if account is None:
+                raise ValueError
+            session.delete(account)
+            session.commit()
+        finally:
+            session.close()
+
     @classmethod
     def importFromDatabase(cls, accountId: int) -> object:
         """
@@ -60,89 +101,47 @@ class Account(Base):
         finally:
             session.close()
 
+    @staticmethod
+    def getAll() -> list:
+        """
+        Return list of all accounts from the database.
 
-def getAllAccountsFromDatabase() -> list:
-    """
-    Return list of all accounts from the database.
-
-    Columns in the table: id, name, balance
-    """
-    session = Session()
-    accounts = session.query(Account).all()
-    session.close()
-    return accounts
-
-
-# def get_account(account_id: int) -> tuple:
-#     """
-#     Return single record from accounts table.
-
-#     Args:
-#         account_id (int): The ID of the account to get.
-
-#     Column order:
-#         [0] - Account ID\n
-#         [1] - Account name\n
-#         [2] - Account balance
-
-#     Returns:
-#         tuple: A single record from the accounts table.
-#     """
-#     connection = sqlite3.connect('data.db')
-#     cursor = connection.cursor()
-
-#     cursor.execute("SELECT * FROM accounts WHERE id = ?;", (account_id,))
-#     account = cursor.fetchone()
-
-#     cursor.close()
-#     connection.close()
-#     return account
-
-
-def edit_account(account_id: int, name: str, balance: float) -> None:
-    """
-    Execute UPDATE query to edit account.
-
-    Args:
-        account_id (int): The ID of the account to edit.
-        name (str): The name of the account.
-        balance (float): The balance of the account.
-
-    Returns:
-        None
-    """
-    connection = sqlite3.connect('data.db')
-    cursor = connection.cursor()
-    if name == Account.importFromDatabase(account_id).name:
-        try:
-            cursor.execute("UPDATE accounts SET balance = ? WHERE id = ?;",
-                           (balance, account_id))
-        except connection.Error:
-            connection.rollback()
-    else:
-        try:
-            cursor.execute("UPDATE accounts SET name = ?, balance = ? WHERE id = ?;",
-                           (name, balance, account_id))
-        except Exception as exc:
-            raise sqlite3.Error from exc
-    connection.commit()
-    cursor.close()
-    connection.close()
-
-
-def deleteAccountFromDatabase(accountId: int) -> None:
-    """
-    Delete account with the given ID from the database.
-    """
-    session = Session()
-    try:
-        account = session.query(Account).filter(Account.id == accountId).one()
-        if account is None:
-            raise ValueError
-        session.delete(account)
-        session.commit()
-    finally:
+        Columns in the table: id, name, balance
+        """
+        session = Session()
+        accounts = session.query(Account).all()
         session.close()
+        return accounts
+
+    @staticmethod
+    def transferMoney(sourceId: int, destinationId: int, amount: float):
+        """
+        Execute UPDATE query to transfer money between accounts.
+
+        Args:
+            from_account_id (int): The ID of the account to transfer from.
+            to_account_id (int): The ID of the account to transfer to.
+            amount (float): The amount to transfer.
+
+        Returns:
+            None
+        """
+        session = Session()
+        try:
+            source_account = session.query(
+                Account).filter_by(id=sourceId).one()
+            destination_account = session.query(
+                Account).filter_by(id=destinationId).one()
+
+            source_account.balance -= float(amount)
+            destination_account.balance += float(amount)
+
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()
 
 
 class Expense(Base):
@@ -161,34 +160,6 @@ class Income(Base):
     amount = Column(Float, nullable=False)
     account_id = Column(Integer, ForeignKey('accounts.id'), nullable=False)
     date = Column(Date, nullable=False)
-
-
-def transfer_money(from_account_id: int, to_account_id: int, amount: float):
-    """
-    Execute UPDATE query to transfer money between accounts.
-
-    Args:
-        from_account_id (int): The ID of the account to transfer from.
-        to_account_id (int): The ID of the account to transfer to.
-        amount (float): The amount to transfer.
-
-    Returns:
-        None
-    """
-    connection = sqlite3.connect('data.db')
-    cursor = connection.cursor()
-
-    try:
-        cursor.execute(
-            "UPDATE accounts SET balance = balance - ? WHERE id = ?;", (amount, from_account_id))
-        cursor.execute(
-            "UPDATE accounts SET balance = balance + ? WHERE id = ?;", (amount, to_account_id))
-    except connection.Error:
-        connection.rollback()
-
-    connection.commit()
-    cursor.close()
-    connection.close()
 
 
 def get_all_expenses() -> list:
