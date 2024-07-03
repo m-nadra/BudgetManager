@@ -81,7 +81,7 @@ class Account(Base):
             session.close()
 
     @classmethod
-    def importFromDatabase(cls, accountId: int) -> object:
+    def importFromDatabase(cls, accountId: int) -> 'Account':
         """
         Create an Account object from the database.
 
@@ -146,11 +146,126 @@ class Account(Base):
 
 class Expense(Base):
     __tablename__ = 'expenses'
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     amount = Column(Float, nullable=False)
     account_id = Column(Integer, ForeignKey('accounts.id'), nullable=False)
-    date = Column(Date, nullable=False)
+    date = Column(String, nullable=False)
+
+    def __init__(self, name, amount, account_id, date, id=None):
+        self.id = id
+        self.name = name
+        self.amount = amount
+        self.account_id = account_id
+        self.date = date
+
+    def addToDatabase(self) -> None:
+        "Add new expense to the database."
+        session = Session()
+        try:
+            session.add(self)
+            session.commit()
+        except IntegrityError as err:
+            session.rollback()
+            raise err
+        finally:
+            session.close()
+
+    def edit(self, name: str, amount: float, date: str, account_id: int) -> None:
+        """
+        Execute UPDATE query to edit expense.
+
+        Args:
+            name (str): The name of the expense.
+            amount (float): The amount of the expense.
+            date (str): The date of the expense.
+            account_id (int): The ID of the account.
+
+        Returns:
+            None
+        """
+        session = Session()
+        self.name = name
+        self.amount = amount
+        self.date = date
+        self.account_id = account_id
+        try:
+            session.query(Expense).filter(Expense.id == self.id).update(
+                {'name': self.name, 'amount': self.amount, 'date': self.date, 'account_id': self.account_id})
+            session.commit()
+        except IntegrityError as err:
+            session.rollback()
+            raise err
+        finally:
+            session.close()
+
+    def deleteFromDatabase(self) -> None:
+        "Delete expense with the given ID from the database."
+        session = Session()
+        try:
+            expense = session.query(Expense).filter(
+                Expense.id == self.id).one()
+            if expense is None:
+                raise ValueError
+            session.delete(expense)
+            session.commit()
+        finally:
+            session.close()
+
+    def deleteFromDatabaseAndUpdateAccountBalance(self) -> None:
+        """
+        Remove the expense from the database and add the refund to the account balance.
+
+        Args:
+            expense_id (int): The ID of the expense to undo.
+
+        Returns:
+            None
+        """
+        session = Session()
+        account = Account.importFromDatabase(self.account_id)
+        try:
+            account.balance += self.amount
+            account.edit(account.name, account.balance)
+            self.deleteFromDatabase()
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()
+
+    @classmethod
+    def importFromDatabase(self, expenseId: int) -> 'Expense':
+        """
+        Create an Expense object from the database.
+
+        Args:
+            expenseId (int): The ID of the expense to import.
+
+        Returns: 
+            Expense object
+        """
+        session = Session()
+        try:
+            expense = session.query(Expense).filter_by(
+                id=expenseId).one_or_none()
+            if expense is None:
+                raise ValueError
+            return Expense(expense.name, expense.amount, expense.account_id, expense.date, expense.id)
+        finally:
+            session.close()
+
+    @staticmethod
+    def getAll() -> list:
+        """
+        Return list of all expenses from the database.
+
+        Columns in the table: id, name, amount, account_id, date
+        """
+        session = Session()
+        expenses = session.query(Expense).all()
+        session.close()
+        return expenses
 
 
 class Income(Base):
@@ -160,188 +275,6 @@ class Income(Base):
     amount = Column(Float, nullable=False)
     account_id = Column(Integer, ForeignKey('accounts.id'), nullable=False)
     date = Column(Date, nullable=False)
-
-
-def get_all_expenses() -> list:
-    """
-    Execute SELECT query to view all expenses.
-
-    Args:
-        None
-
-    Column order:
-        [0] - Expense name\n
-        [1] - Expense amount\n
-        [2] - Expense date\n
-        [3] - Account name\n
-        [4] - Expense ID
-
-    Returns:
-        list: A list of all expenses retrieved from the database.
-    """
-    connection = sqlite3.connect('data.db')
-    cursor = connection.cursor()
-
-    cursor.execute(
-        """
-        SELECT e.name, printf("%.2f", e.amount), e.date, a.name, e.id
-        FROM expenses AS e
-        JOIN accounts AS a
-        ON a.id=e.account_id;
-        """)
-    expenses = cursor.fetchall()
-
-    cursor.close()
-    connection.close()
-    return expenses
-
-
-def add_expense(name: str, amount: float, date: str, account_id: int) -> None:
-    """
-    Adds an expenses table entry to the database 
-    and reduces the account balance by the value of the expense.
-
-    Args:
-        name (str): The name of the expense.
-        amount (float): The amount of the expense.
-        date (str): The date of the expense.
-        account_id (int): The ID of the account.
-
-    Returns:
-        None
-    """
-    connection = sqlite3.connect('data.db')
-    cursor = connection.cursor()
-
-    try:
-        cursor.execute("INSERT INTO expenses (name, amount, date, account_id) VALUES (?, ?, ?, ?);",
-                       (name, amount, date, account_id))
-        cursor.execute(
-            "UPDATE accounts SET balance = balance - ? WHERE id = ?;", (amount, account_id))
-    except connection.Error:
-        connection.rollback()
-
-    connection.commit()
-    cursor.close()
-    connection.close()
-
-
-def get_expense(expense_id: int) -> tuple:
-    """
-    Return single record from expenses table.
-
-    Args:
-        expense_id (int): The ID of the expense to get.
-
-    Column order:
-        [0] - Expense name\n
-        [1] - Expense amount\n
-        [2] - Expense date\n
-        [3] - Account name\n
-        [4] - Expense ID
-
-    Returns:
-        tuple: A single record from the expenses table.
-    """
-    connection = sqlite3.connect('data.db')
-    cursor = connection.cursor()
-
-    cursor.execute(
-        """
-        SELECT e.name, e.amount, e.date, a.name, e.id
-        FROM expenses AS e
-        JOIN accounts AS a
-        ON a.id=e.account_id WHERE e.id = ?;
-        """, (expense_id,))
-    expense = cursor.fetchone()
-
-    cursor.close()
-    connection.close()
-    return expense
-
-
-def edit_expense(name: str, amount: float, date: str, account_id: int, expense_id: int) -> None:
-    """
-    Execute UPDATE query to edit expense.
-
-    Args:
-        name (str): The name of the expense.
-        amount (float): The amount of the expense.
-        date (str): The date of the expense.
-        account_id (int): The ID of the account.
-        expense_id (int): The ID of the expense.
-
-    Returns:
-        None
-    """
-    connection = sqlite3.connect('data.db')
-    cursor = connection.cursor()
-
-    try:
-        cursor.execute(
-            """
-            UPDATE expenses
-            SET name = ?, amount = ?, date = ?, account_id = ?
-            WHERE id = ?;
-            """, (name, amount, date, account_id, expense_id))
-    except connection.Error:
-        connection.rollback()
-
-    connection.commit()
-    cursor.close()
-    connection.close()
-
-
-def delete_expense(expense_id: int) -> None:
-    """
-    Delete expense from the database without changing account balance.
-
-    Args:
-        expense_id (int): The ID of the expense to delete.
-
-    Returns:
-        None
-    """
-    connection = sqlite3.connect('data.db')
-    cursor = connection.cursor()
-
-    try:
-        cursor.execute("DELETE FROM expenses WHERE id = ?;", (expense_id,))
-    except connection.Error:
-        connection.rollback()
-
-    connection.commit()
-    cursor.close()
-    connection.close()
-
-
-def undo_expense(expense_id: int) -> None:
-    """
-    Remove the expense from the database and add the refund to the account balance.
-
-    Args:
-        expense_id (int): The ID of the expense to undo.
-
-    Returns:
-        None
-    """
-    connection = sqlite3.connect('data.db')
-    cursor = connection.cursor()
-
-    try:
-        cursor.execute(
-            """
-            UPDATE accounts
-            SET balance = balance + (SELECT amount FROM expenses WHERE id = ?)
-            WHERE id = (SELECT account_id FROM expenses WHERE id = ?);
-            """, (expense_id, expense_id))
-        cursor.execute("DELETE FROM expenses WHERE id = ?;", (expense_id,))
-    except connection.Error:
-        connection.rollback()
-
-    connection.commit()
-    cursor.close()
-    connection.close()
 
 
 def get_all_incomes() -> list:

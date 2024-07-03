@@ -12,17 +12,19 @@
         <th>Actions</th>
     </tr>
     {% for expense in expenses %}
+    {% for account in accounts %}
         <tr>
-            <td>{{expense[0]}}</td>
-            <td>{{expense[1]}}</td>
-            <td>{{expense[2]}}</td>
-            <td>{{expense[3]}}</td>
-            <td><a href="/edit_expense/{{expense[4]}}"><button class="btn btn-primary">Edit</button></a>
-                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" onclick="expenseId = '{{expense[4]}}';"">
+            <td>{{expense.name}}</td>
+            <td>{{expense.amount}}</td>
+            <td>{{expense.date}}</td>
+            <td>{{account.name}}</td>
+            <td><a href="/edit_expense/{{expense.id}}"><button class="btn btn-primary">Edit</button></a>
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" onclick="expenseId = '{{expense.id}}';"">
                     Delete
                 </button>
             </td>
         </tr>
+    {% endfor %}
     {% endfor %}
 </table>  
 <!-- Modal -->

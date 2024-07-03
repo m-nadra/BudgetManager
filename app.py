@@ -23,7 +23,7 @@ Routes:
 - '/undo_income/<int:income_id>' : Undo an income by its ID.
 """
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 import database as db
 
 app = Flask(__name__)
@@ -158,7 +158,7 @@ def transfer_money() -> str:
     return render_template('accounts.html', accounts=db.Account.getAll())
 
 
-@app.route('/expenses', methods=['GET', 'POST'])
+@app.route('/expenses', methods=['GET'])
 def expenses() -> str:
     """
     Handles the expenses route.
@@ -173,27 +173,29 @@ def expenses() -> str:
     Returns:
         str: The rendered 'expenses.html' template as a string.
     """
-    if request.method == 'POST':
-        name = request.form.get('name')
-        amount = request.form.get('amount')
-        date = request.form.get('date')
-        account_id = request.form.get('account')
-        db.add_expense(name, amount, date, account_id)
     try:
-        return render_template('expenses.html', expenses=db.get_all_expenses())
+        return render_template('expenses.html', expenses=db.Expense.getAll(), accounts=db.Account.getAll())
     except db.sqlite3.OperationalError:
         return render_template('expenses.html')
 
 
-@app.route('/add_expense')
+@app.route('/add_expense', methods=['GET', 'POST'])
 def add_expense() -> str:
     """
-    Renders the 'add_expense.html' template.
+    Renders the 'Expense.add.html' template.
 
     Returns:
         str: The rendered template.
     """
-    return render_template('add_expense.html', accounts=db.Account.getAll())
+    if request.method == 'GET':
+        return render_template('add_expense.html', accounts=db.Account.getAll())
+    name = request.form.get('name')
+    amount = request.form.get('amount')
+    account_id = request.form.get('account')
+    date = request.form.get('date')
+    expense = db.Expense(name, amount, account_id, date)
+    expense.addToDatabase()
+    return redirect(url_for('expenses'))
 
 
 @app.route('/edit_expense/<int:expense_id>', methods=['GET', 'POST'])
@@ -217,14 +219,15 @@ def edit_expense(expense_id: int) -> str:
         str: The rendered 'expenses.html' template as a string.
     """
     if request.method == 'GET':
-        return render_template('edit_expense.html', expense=db.get_expense(expense_id),
+        return render_template('edit_expense.html', expense=db.Expense.importFromDatabase(expense_id),
                                accounts=db.Account.getAll())
     name = request.form.get('name')
     amount = request.form.get('amount')
     date = request.form.get('date')
     account_id = request.form.get('account')
-    db.edit_expense(name, amount, date, account_id, expense_id)
-    return render_template('expenses.html', expenses=db.get_all_expenses())
+    expense = db.Expense.importFromDatabase(expense_id)
+    expense.edit(name, amount, date, account_id)
+    return redirect(url_for('expenses'))
 
 
 @app.route('/delete_expense/<int:expense_id>')
@@ -243,8 +246,9 @@ def delete_expense(expense_id: int) -> str:
     Returns:
         str: The rendered 'expenses.html' template as a string.
     """
-    db.delete_expense(expense_id)
-    return render_template('expenses.html', expenses=db.get_all_expenses())
+    expense = db.Expense.importFromDatabase(expense_id)
+    expense.deleteFromDatabase()
+    return redirect(url_for('expenses'))
 
 
 @app.route('/undo_expense/<int:expense_id>', methods=['GET', 'POST'])
@@ -259,8 +263,9 @@ def undo_expense(expense_id: int) -> str:
     - str: The rendered 'expenses.html' template.
 
     """
-    db.undo_expense(expense_id)
-    return render_template('expenses.html', expenses=db.get_all_expenses())
+    expense = db.Expense.importFromDatabase(expense_id)
+    expense.deleteFromDatabaseAndUpdateAccountBalance()
+    return render_template('expenses.html', expenses=db.Expense.getAll())
 
 
 @app.route('/incomes', methods=['GET', 'POST'])
