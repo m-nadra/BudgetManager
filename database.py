@@ -1,4 +1,4 @@
-"Contains functions to interact with the database."
+"""Contains functions to interact with the database."""
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -8,8 +8,11 @@ from sqlalchemy.exc import IntegrityError
 
 
 class Base:
+    """Contains common fields and methods, which are inherited by all classes."""
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
     def deleteFromDatabase(self) -> None:
-        "Delete object from the database."
+        """Delete object from the database."""
         session = Session()
         try:
             objectToDelete = session.query(self.__class__).filter(
@@ -21,6 +24,18 @@ class Base:
         finally:
             session.close()
 
+    @classmethod
+    def getAll(cls) -> list:
+        """Get all records from the table.
+
+        Returns:
+            list: Table records.
+        """
+        session = Session()
+        records = session.query(cls).all()
+        session.close()
+        return records
+
 
 engine = create_engine('sqlite:///data.db', echo=True)
 Base = declarative_base(cls=Base)
@@ -29,18 +44,25 @@ Session = sessionmaker(bind=engine)
 
 
 class Account(Base):
+    """Represents an account table in the database."""
     __tablename__ = 'accounts'
-    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False, unique=True)
     balance = Column(Float, nullable=False)
 
-    def __init__(self, name, balance, id=None):
+    def __init__(self, name: str, balance: float, id: int = None) -> None:
+        """Class constructor
+
+        Args:
+            name (str): Name of the account.
+            balance (float): Amount of money in the account.
+            id (int, optional): Account ID. Defaults to None. Database will assign it automatically.
+        """
         self.id = id
         self.name = name
         self.balance = balance
 
     def addToDatabase(self) -> None:
-        "Add object to the database."
+        """Add object to the database."""
         session = Session()
         try:
             session.add(self)
@@ -52,16 +74,11 @@ class Account(Base):
             session.close()
 
     def edit(self, name: str, balance: float) -> None:
-        """
-        Execute UPDATE query to edit account.
+        """Update the account in the database.
 
         Args:
-            account_id (int): The ID of the account to edit.
-            name (str): The name of the account.
-            balance (float): The balance of the account.
-
-        Returns:
-            None
+            name (str): New name of the account.
+            balance (float): New balance of the account.
         """
         session = Session()
         if self.name != name:  # Prevent blocking query when name is not changed
@@ -79,14 +96,13 @@ class Account(Base):
 
     @classmethod
     def importFromDatabase(cls, accountId: int) -> 'Account':
-        """
-        Create an Account object from the database.
+        """Create an Account object from the database.
 
         Args:
-            accountId (int): The ID of the account to import.
+            accountId (int): ID of the account to import.
 
-        Returns: 
-            Account object
+        Returns:
+            Account: Object of the account.
         """
         session = Session()
         try:
@@ -99,40 +115,22 @@ class Account(Base):
             session.close()
 
     @staticmethod
-    def getAll() -> list:
-        """
-        Return list of all accounts from the database.
-
-        Columns in the table: id, name, balance
-        """
-        session = Session()
-        accounts = session.query(Account).all()
-        session.close()
-        return accounts
-
-    @staticmethod
-    def transferMoney(sourceId: int, destinationId: int, amount: float):
-        """
-        Execute UPDATE query to transfer money between accounts.
+    def transferMoney(sourceId: int, destinationId: int, amount: float) -> None:
+        """Transfer money between accounts.
 
         Args:
-            from_account_id (int): The ID of the account to transfer from.
-            to_account_id (int): The ID of the account to transfer to.
-            amount (float): The amount to transfer.
-
-        Returns:
-            None
+            sourceId (int): ID of account to transfer money from.
+            destinationId (int): ID of account to transfer money to.
+            amount (float): Amount of money to transfer.
         """
         session = Session()
         try:
-            source_account = session.query(
+            sourceAccount = session.query(
                 Account).filter_by(id=sourceId).one()
-            destination_account = session.query(
+            destinationAccount = session.query(
                 Account).filter_by(id=destinationId).one()
-
-            source_account.balance -= float(amount)
-            destination_account.balance += float(amount)
-
+            sourceAccount.balance -= float(amount)
+            destinationAccount.balance += float(amount)
             session.commit()
         except Exception as e:
             session.rollback()
@@ -142,14 +140,23 @@ class Account(Base):
 
 
 class Expense(Base):
+    """Represents an expense table in the database."""
     __tablename__ = 'expenses'
-    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     amount = Column(Float, nullable=False)
     account_id = Column(Integer, ForeignKey('accounts.id'), nullable=False)
     date = Column(String, nullable=False)
 
-    def __init__(self, name, amount, account_id, date, id=None):
+    def __init__(self, name: str, amount: float, account_id: int, date: str, id: int = None) -> None:
+        """Class constructor.
+
+        Args:
+            name (str): Name of the expense.
+            amount (float): Amount of the expense.
+            account_id (int): Account ID of the expense.
+            date (str): Date of the expense.
+            id (int, optional): Expense ID. Defaults to None. Database will assign it automatically.
+        """
         self.id = id
         self.name = name
         self.amount = amount
@@ -157,7 +164,7 @@ class Expense(Base):
         self.date = date
 
     def addToDatabase(self) -> None:
-        "Add object to the database."
+        """Add object to the database."""
         session = Session()
         try:
             account = Account.importFromDatabase(self.account_id)
@@ -172,17 +179,11 @@ class Expense(Base):
             session.close()
 
     def edit(self, name: str, amount: float, date: str, account_id: int) -> None:
-        """
-        Execute UPDATE query to edit expense.
-
-        Args:
-            name (str): The name of the expense.
-            amount (float): The amount of the expense.
-            date (str): The date of the expense.
-            account_id (int): The ID of the account.
-
-        Returns:
-            None
+        """Update the expense in the database.
+        :param name: New name of the expense.
+        :param amount: New amount of the expense.
+        :param date: New date of the expense.
+        :param account_id: Account ID of the expense.
         """
         session = Session()
         try:
@@ -199,15 +200,7 @@ class Expense(Base):
             session.close()
 
     def deleteFromDatabaseAndUpdateAccountBalance(self) -> None:
-        """
-        Remove the expense from the database and add the refund to the account balance.
-
-        Args:
-            expense_id (int): The ID of the expense to undo.
-
-        Returns:
-            None
-        """
+        """Remove expense from the database and update account balance."""
         session = Session()
         account = Account.importFromDatabase(self.account_id)
         try:
@@ -222,14 +215,9 @@ class Expense(Base):
 
     @classmethod
     def importFromDatabase(self, expenseId: int) -> 'Expense':
-        """
-        Create an Expense object from the database.
-
-        Args:
-            expenseId (int): The ID of the expense to import.
-
-        Returns: 
-            Expense object
+        """Create an Expense object from the database.
+        :param expenseId: The ID of the expense to import.
+        :return: Expense object
         """
         session = Session()
         try:
@@ -241,35 +229,33 @@ class Expense(Base):
         finally:
             session.close()
 
-    @staticmethod
-    def getAll() -> list:
-        """
-        Return list of all expenses from the database.
-
-        Columns in the table: id, name, amount, account_id, date
-        """
-        session = Session()
-        expenses = session.query(Expense).all()
-        session.close()
-        return expenses
-
 
 class Income(Base):
+    """Represents an income table in the database."""
     __tablename__ = 'incomes'
-    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     amount = Column(Float, nullable=False)
     account_id = Column(Integer, ForeignKey('accounts.id'), nullable=False)
     date = Column(String, nullable=False)
 
-    def __init__(self, name, amount, account_id, date, id=None):
+    def __init__(self, name: str, amount: float, accountId: int, date: str, id: int = None) -> None:
+        """Class constructor
+
+        Args:
+            name (str): Name of the income,
+            amount (float): Amount of the income,
+            accountId (int): Account ID of the income,
+            date (str): Date of the income,
+            id (int, optional): Income ID. Defaults to None. Database will assign it automatically.
+        """
         self.id = id
         self.name = name
         self.amount = amount
-        self.account_id = account_id
+        self.account_id = accountId
         self.date = date
 
     def addToDatabase(self) -> None:
+        """Add object to the database."""
         session = Session()
         try:
             account = Account.importFromDatabase(self.account_id)
@@ -285,14 +271,13 @@ class Income(Base):
 
     @classmethod
     def importFromDatabase(cls, incomeId: int) -> 'Income':
-        """
-        Create an Income object from the database.
+        """Create an Income object from the database.
 
         Args:
             incomeId (int): The ID of the income to import.
 
-        Returns: 
-            Income object
+        Returns:
+            Income: Object of the income.
         """
         session = Session()
         try:
@@ -305,17 +290,13 @@ class Income(Base):
             session.close()
 
     def edit(self, name: str, amount: float, date: str, account_id: int) -> None:
-        """
-        Execute UPDATE query to edit income.
+        """Update the income in the database.
 
         Args:
             name (str): The name of the income.
             amount (float): The amount of the income.
             date (str): The date of the income.
             account_id (int): The ID of the account.
-
-        Returns:
-            None
         """
         session = Session()
         try:
@@ -331,28 +312,8 @@ class Income(Base):
         finally:
             session.close()
 
-    @staticmethod
-    def getAll() -> list:
-        """
-        Return list of all incomes from the database.
-
-        Columns in the table: id, name, amount, account_id, date
-        """
-        session = Session()
-        incomes = session.query(Income).all()
-        session.close()
-        return incomes
-
-    def deleteFromDatabaseAndUpdateAccountBalance(self):
-        """
-        Remove income from the database and subtract the income amount from the account balance.
-
-        Args:
-            income_id (int): The ID of the income to undo.
-
-        Returns:
-            None
-        """
+    def deleteFromDatabaseAndUpdateAccountBalance(self) -> None:
+        """Remove income from the database and update account balance."""
         session = Session()
         account = Account.importFromDatabase(self.account_id)
         try:
