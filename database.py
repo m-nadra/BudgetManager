@@ -1,14 +1,29 @@
 "Contains functions to interact with the database."
-import sqlite3
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, ForeignKey
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
 
+
+class Base:
+    def deleteFromDatabase(self) -> None:
+        "Delete object from the database."
+        session = Session()
+        try:
+            objectToDelete = session.query(self.__class__).filter(
+                self.__class__.id == self.id).one()
+            if objectToDelete is None:
+                raise ValueError
+            session.delete(objectToDelete)
+            session.commit()
+        finally:
+            session.close()
+
+
 engine = create_engine('sqlite:///data.db', echo=True)
-Base = declarative_base()
+Base = declarative_base(cls=Base)
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
 
@@ -25,10 +40,7 @@ class Account(Base):
         self.balance = balance
 
     def addToDatabase(self) -> None:
-        """
-        Add new account to the database.
-        If account name already exists, raise an error.
-        """
+        "Add object to the database."
         session = Session()
         try:
             session.add(self)
@@ -62,21 +74,6 @@ class Account(Base):
         except IntegrityError as err:
             session.rollback()
             raise err
-        finally:
-            session.close()
-
-    def deleteFromDatabase(self) -> None:
-        """
-        Delete account with the given ID from the database.
-        """
-        session = Session()
-        try:
-            account = session.query(Account).filter(
-                Account.id == self.id).one()
-            if account is None:
-                raise ValueError
-            session.delete(account)
-            session.commit()
         finally:
             session.close()
 
@@ -160,9 +157,12 @@ class Expense(Base):
         self.date = date
 
     def addToDatabase(self) -> None:
-        "Add new expense to the database."
+        "Add object to the database."
         session = Session()
         try:
+            account = Account.importFromDatabase(self.account_id)
+            account.balance -= float(self.amount)
+            account.edit(account.name, account.balance)
             session.add(self)
             session.commit()
         except IntegrityError as err:
@@ -185,30 +185,16 @@ class Expense(Base):
             None
         """
         session = Session()
-        self.name = name
-        self.amount = amount
-        self.date = date
-        self.account_id = account_id
         try:
+            account = Account.importFromDatabase(self.account_id)
+            account.balance += float(self.amount) - float(amount)
+            account.edit(account.name, account.balance)
             session.query(Expense).filter(Expense.id == self.id).update(
-                {'name': self.name, 'amount': self.amount, 'date': self.date, 'account_id': self.account_id})
+                {'name': name, 'amount': amount, 'date': date, 'account_id': account_id})
             session.commit()
         except IntegrityError as err:
             session.rollback()
             raise err
-        finally:
-            session.close()
-
-    def deleteFromDatabase(self) -> None:
-        "Delete expense with the given ID from the database."
-        session = Session()
-        try:
-            expense = session.query(Expense).filter(
-                Expense.id == self.id).one()
-            if expense is None:
-                raise ValueError
-            session.delete(expense)
-            session.commit()
         finally:
             session.close()
 
@@ -270,185 +256,112 @@ class Expense(Base):
 
 class Income(Base):
     __tablename__ = 'incomes'
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     amount = Column(Float, nullable=False)
     account_id = Column(Integer, ForeignKey('accounts.id'), nullable=False)
-    date = Column(Date, nullable=False)
+    date = Column(String, nullable=False)
 
+    def __init__(self, name, amount, account_id, date, id=None):
+        self.id = id
+        self.name = name
+        self.amount = amount
+        self.account_id = account_id
+        self.date = date
 
-def get_all_incomes() -> list:
-    """
-    Execute SELECT query to view all incomes.
+    def addToDatabase(self) -> None:
+        session = Session()
+        try:
+            account = Account.importFromDatabase(self.account_id)
+            account.balance += float(self.amount)
+            session.add(self)
+            account.edit(account.name, account.balance)
+            session.commit()
+        except IntegrityError as err:
+            session.rollback()
+            raise err
+        finally:
+            session.close()
 
-    Column order:
-        [0] - Income name\n
-        [1] - Income amount\n
-        [2] - Income date\n
-        [3] - Account name\n
-        [4] - Income ID
-
-    Returns:
-        list: A list of all incomes retrieved from the database.
-    """
-    connection = sqlite3.connect('data.db')
-    cursor = connection.cursor()
-
-    cursor.execute(
+    @classmethod
+    def importFromDatabase(cls, incomeId: int) -> 'Income':
         """
-        SELECT i.name, printf("%.2f", i.amount), i.date, a.name, i.id
-        FROM incomes AS i
-        JOIN accounts AS a
-        ON a.id=i.account_id; """)
-    incomes = cursor.fetchall()
+        Create an Income object from the database.
 
-    cursor.close()
-    connection.close()
-    return incomes
+        Args:
+            incomeId (int): The ID of the income to import.
 
+        Returns: 
+            Income object
+        """
+        session = Session()
+        try:
+            income = session.query(Income).filter_by(
+                id=incomeId).one_or_none()
+            if income is None:
+                raise ValueError
+            return cls(income.name, income.amount, income.account_id, income.date, income.id)
+        finally:
+            session.close()
 
-def add_income(name: str, amount: float, date: str, account_id: int):
-    """
-    Adds an entry to the incomes table in the database 
-    and increases the account balance by the value of income.
+    def edit(self, name: str, amount: float, date: str, account_id: int) -> None:
+        """
+        Execute UPDATE query to edit income.
 
-    Args:
-        name (str): The name of the income.
-        amount (float): The amount of the income.
-        date (str): The date of the income.
-        account_id (int): The ID of the account.
+        Args:
+            name (str): The name of the income.
+            amount (float): The amount of the income.
+            date (str): The date of the income.
+            account_id (int): The ID of the account.
 
-    Returns:
-        None
-    """
-    connection = sqlite3.connect('data.db')
-    cursor = connection.cursor()
+        Returns:
+            None
+        """
+        session = Session()
+        try:
+            account = Account.importFromDatabase(self.account_id)
+            account.balance -= self.amount - float(amount)
+            account.edit(account.name, account.balance)
+            session.query(Income).filter(Income.id == self.id).update(
+                {'name': name, 'amount': amount, 'date': date, 'account_id': account_id})
+            session.commit()
+        except IntegrityError as err:
+            session.rollback()
+            raise err
+        finally:
+            session.close()
 
-    try:
-        cursor.execute("INSERT INTO incomes (name, amount, date, account_id) VALUES (?, ?, ?, ?);",
-                       (name, amount, date, account_id))
-        cursor.execute(
-            "UPDATE accounts SET balance = balance + ? WHERE id = ?;", (amount, account_id))
-    except connection.Error:
-        connection.rollback()
+    @staticmethod
+    def getAll() -> list:
+        """
+        Return list of all incomes from the database.
 
-    connection.commit()
-    cursor.close()
-    connection.close()
+        Columns in the table: id, name, amount, account_id, date
+        """
+        session = Session()
+        incomes = session.query(Income).all()
+        session.close()
+        return incomes
 
+    def deleteFromDatabaseAndUpdateAccountBalance(self):
+        """
+        Remove income from the database and subtract the income amount from the account balance.
 
-def get_income(income_id: int) -> tuple:
-    """
-    Return single record from incomes table.
+        Args:
+            income_id (int): The ID of the income to undo.
 
-    Column order:
-        [0] - Income name\n
-        [1] - Income amount\n
-        [2] - Income date\n
-        [3] - Account name\n
-        [4] - Income ID
-
-    Returns:
-        tuple: A single record from the incomes table.
-    """
-    connection = sqlite3.connect('data.db')
-    cursor = connection.cursor()
-
-    cursor.execute(
-        """SELECT i.name, i.amount, i.date, a.name, i.id
-        FROM incomes AS i
-        JOIN accounts AS a
-        ON a.id=i.account_id WHERE i.id = ?;""", (income_id,))
-    income = cursor.fetchone()
-
-    cursor.close()
-    connection.close()
-    return income
-
-
-def edit_income(name: str, amount: float, date: str, account_id: int, income_id: int) -> None:
-    """
-    Execute UPDATE query to edit income.
-
-    Args:
-        name (str): The name of the income.
-        amount (float): The amount of the income.
-        date (str): The date of the income.
-        account_id (int): The ID of the account.
-        income_id (int): The ID of the income.
-
-    Returns:
-        None
-    """
-    connection = sqlite3.connect('data.db')
-    cursor = connection.cursor()
-
-    try:
-        balance_change = float(get_income(income_id)[1]) - float(amount)
-        cursor.execute(
-            """
-            UPDATE accounts
-            SET balance = balance - ?
-            WHERE id = (SELECT account_id FROM incomes WHERE id = ?);
-            """, (balance_change, income_id))
-        cursor.execute(
-            "UPDATE incomes SET name = ?, amount = ?, date = ?, account_id = ? WHERE id = ?;",
-            (name, amount, date, account_id, income_id))
-    except connection.Error:
-        connection.rollback()
-
-    connection.commit()
-    cursor.close()
-    connection.close()
-
-
-def delete_income(income_id: int) -> None:
-    """
-    Execute DELETE query to delete income without changing account balance.
-
-    Args:
-        income_id (int): The ID of the income to delete.
-
-    Returns:
-        None
-    """
-    connection = sqlite3.connect('data.db')
-    cursor = connection.cursor()
-
-    try:
-        cursor.execute("DELETE FROM incomes WHERE id = ?;", (income_id,))
-    except connection.Error:
-        connection.rollback()
-
-    connection.commit()
-    cursor.close()
-    connection.close()
-
-
-def undo_income(income_id: int) -> None:
-    """
-    Remove income from the database and subtract the income amount from the account balance.
-
-    Args:
-        income_id (int): The ID of the income to undo.
-
-    Returns:
-        None
-    """
-    connection = sqlite3.connect('data.db')
-    cursor = connection.cursor()
-
-    try:
-        cursor.execute(
-            """
-            UPDATE accounts
-            SET balance = balance - (SELECT amount FROM incomes WHERE id = ?)
-            WHERE id = (SELECT account_id FROM incomes WHERE id = ?);
-            """, (income_id, income_id))
-        cursor.execute("DELETE FROM incomes WHERE id = ?;", (income_id,))
-    except connection.Error:
-        connection.rollback()
-
-    connection.commit()
-    cursor.close()
-    connection.close()
+        Returns:
+            None
+        """
+        session = Session()
+        account = Account.importFromDatabase(self.account_id)
+        try:
+            account.balance -= self.amount
+            account.edit(account.name, account.balance)
+            self.deleteFromDatabase()
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()

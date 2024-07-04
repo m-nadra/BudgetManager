@@ -13,19 +13,23 @@
     </tr>
     {% for expense in expenses %}
     {% for account in accounts %}
+    {% if expense.account_id == account.id %}
         <tr>
             <td>{{expense.name}}</td>
             <td>{{expense.amount}}</td>
             <td>{{expense.date}}</td>
             <td>{{account.name}}</td>
-            <td><a href="/edit_expense/{{expense.id}}"><button class="btn btn-primary">Edit</button></a>
+            
+            <td><a href="/editExpense/{{expense.id}}"><button class="btn btn-primary">Edit</button></a>
                 <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" onclick="expenseId = '{{expense.id}}';"">
                     Delete
                 </button>
             </td>
         </tr>
+    {% endif %}
     {% endfor %}
     {% endfor %}
+
 </table>  
 <!-- Modal -->
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -39,8 +43,8 @@
         Would you like to delete only this expense entry or also undo the changes to your account?
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-danger" onclick="window.location.href='/delete_expense/' + expenseId">Delete entry</button>
-        <button type="button" class="btn btn-danger" onclick="window.location.href='/undo_expense/' + expenseId">Delete and undo changes to your account</button>
+        <button type="button" class="btn btn-danger" onclick="window.location.href='/deleteExpense/' + expenseId">Delete entry</button>
+        <button type="button" class="btn btn-danger" onclick="window.location.href='/undoExpense/' + expenseId">Delete and undo changes to your account</button>
       </div>
     </div>
   </div>

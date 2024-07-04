@@ -1,7 +1,7 @@
 {% extends "index.html" %}
 {% block content %}
 <h3 style="text-align: center; padding: 10px;">Transfer money</h3>
-<form class="mb-3 w-75 m-auto needs-validation" action="/transfer_money" method="POST" novalidate>
+<form class="mb-3 w-75 m-auto needs-validation" action="/transferMoney" method="POST" novalidate>
     <div class="form-floating mb-3">
     <select class="form-control" id="from_account" name="from_account" required>
         {% for account in accounts %}

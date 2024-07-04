@@ -2,29 +2,29 @@
 {% block content %}
 
 <h3 style="text-align: center; padding: 10px;">Edit income</h3>
-<form id="form" class="mb-3 w-75 m-auto needs-validation" method="POST" action="/edit_income/{{income[4]}}" novalidate>
+<form id="form" class="mb-3 w-75 m-auto needs-validation" method="POST" action="/editIncome/{{income.id}}" novalidate>
     <div class="form-floating mb-3">
-        <input type="text" class="form-control" id="name" name="name" value="{{income[0]}}" required>
+        <input type="text" class="form-control" id="name" name="name" value="{{income.name}}" required>
         <label for="name">Income name:</label>
         <div class="invalid-feedback">
             Please provide income name.
         </div>
     </div>
     <div class="form-floating mb-3">
-        <input type="number" class="form-control" step="0.01" id="amount" name="amount"  value="{{income[1]}}" required>
+        <input type="number" class="form-control" step="0.01" id="amount" name="amount"  value="{{income.amount}}" required>
         <label for="amount">Amount:</label>
         <div class="invalid-feedback">
             Please provide an amount.
         </div>
     </div>
     <div class="form-floating mb-3">
-        <input class="form-control" type="date" id="date" name="date" value="{{income[2]}}" required>
+        <input class="form-control" type="date" id="date" name="date" value="{{income.date}}" required>
         <label for="date">Date:</label>
     </div>
     <div class="form-floating mb-3">
         <select class="form-select" id="account" name="account" required>
             {% for account in accounts %}
-            <option value="{{account[0]}}" {% if account[1] == income[3] %} selected {% endif %}>{{account[1]}}</option>
+            <option value="{{account.id}}" {% if account.name == income.account_id %} selected {% endif %}>{{account.name}}</option>
             {% endfor %}
         </select>
         <label for="account">Account:</label>

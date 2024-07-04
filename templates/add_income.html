@@ -2,7 +2,7 @@
 {% block content %}
 
 <h3 style="text-align: center; padding: 10px;">Add income</h3>
-<form id="form" class="mb-3 w-75 m-auto needs-validation" method="POST" action="/incomes" novalidate>
+<form id="form" class="mb-3 w-75 m-auto needs-validation" method="POST" action="/addIncome" novalidate>
     <div class="form-floating mb-3">
         <input type="text" class="form-control" id="name" name="name" required>
         <label for="name">Income name:</label>
@@ -24,7 +24,7 @@
     <div class="form-floating mb-3">
         <select class="form-select" id="account" name="account" required>
             {% for account in accounts %}
-            <option value="{{account[0]}}">{{account[1]}}</option>
+            <option value="{{account.id}}">{{account.name}}</option>
             {% endfor %}
         </select>
         <label for="account">Account:</label>

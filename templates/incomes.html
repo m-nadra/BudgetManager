@@ -12,18 +12,22 @@
         <th>Actions</th>
     </tr>
     {% for income in incomes %}
-        <tr>
-            <td>{{income[0]}}</td>
-            <td>{{income[1]}}</td>
-            <td>{{income[2]}}</td>
-            <td>{{income[3]}}</td>
-            <td>
-              <a href="/edit_income/{{income[4]}}"><button class="btn btn-primary">Edit</button></a>
-              <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" onclick="incomeId = '{{income[4]}}';"">
-                    Delete
-              </button>
-            </td>
-        </tr>
+    {% for account in accounts %}
+    {% if income.account_id == account.id %}
+    <tr>
+        <td>{{income.name}}</td>
+        <td>{{income.amount}}</td>
+        <td>{{income.date}}</td>
+        <td>{{account.name}}</td>
+        <td>
+          <a href="/editIncome/{{income.id}}"><button class="btn btn-primary">Edit</button></a>
+          <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" onclick="incomeId = '{{income.id}}';"">
+                Delete
+          </button>
+        </td>
+    </tr>
+    {% endif %}
+    {% endfor %}
     {% endfor %}
 </table>  
 
@@ -39,8 +43,8 @@
         Would you like to delete only this income entry or also undo the changes to your account?
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-danger" onclick="window.location.href='/delete_income/' + incomeId">Delete entry</button>
-        <button type="button" class="btn btn-danger" onclick="window.location.href='/undo_income/' + incomeId">Delete and undo changes to your account</button>
+        <button type="button" class="btn btn-danger" onclick="window.location.href='/deleteIncomeFromDatabase/' + incomeId">Delete entry</button>
+        <button type="button" class="btn btn-danger" onclick="window.location.href='/deleteIncomeFromDatabaseAndUpdateAccountBalance/' + incomeId">Delete and undo changes to your account</button>
       </div>
     </div>
   </div>

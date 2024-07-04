@@ -14,7 +14,7 @@
             <td>{{ account.name }}</td>
             <td>{{ account.balance }}</td>
             <td>
-                <a href="/edit_account/{{account.id}}"><button class="btn btn-primary">Edit</button></a>
+                <a href="/editAccount/{{account.id}}"><button class="btn btn-primary">Edit</button></a>
                 <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" onclick="accountId = '{{account.id}}';"">
                     Delete
                 </button>
@@ -34,7 +34,7 @@
             Deleting an account is irreversible and deletes all entries associated with the account. Are you sure you want to delete this account?
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-danger" onclick="window.location.href='/delete_account/' + accountId">Delete account</button>
+          <button type="button" class="btn btn-danger" onclick="window.location.href='/deleteAccount/' + accountId">Delete account</button>
         </div>
       </div>
     </div>
