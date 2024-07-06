@@ -94,7 +94,7 @@ def transferMoney() -> str:
     "Transfer money between accounts. Redirect to 'accounts' route."
     sourceId = request.form.get('from_account')
     destinationId = request.form.get('to_account')
-    amount = request.form.get('amount')
+    amount = float(request.form.get('amount'))
     db.Account.transferMoney(sourceId, destinationId, amount)
     return redirect(url_for('accounts'))
 
@@ -121,6 +121,7 @@ def addExpense() -> str:
     account_id = request.form.get('account')
     date = request.form.get('date')
     expense = db.Expense(name, amount, account_id, date)
+    db.Account.updateBalance(account_id, -float(amount))
     expense.addToDatabase()
     return redirect(url_for('expenses'))
 
@@ -134,14 +135,25 @@ def renderEditExpenseSite(expenseId: int) -> str:
 
 
 @app.route('/editExpense/<int:expenseId>', methods=['POST'])
-def editExpense(expense_id: int) -> str:
+def editExpense(expenseId: int) -> str:
     "Edit expense by its ID. Redirect to 'expenses' route."
-    name = request.form.get('name')
-    amount = request.form.get('amount')
-    date = request.form.get('date')
-    account_id = request.form.get('account')
-    expense = db.Expense.importFromDatabase(expense_id)
-    expense.edit(name, amount, date, account_id)
+    expense = db.Expense.importFromDatabase(expenseId)
+    newAmount = float(request.form.get('amount'))
+    newAccountId = request.form.get('account')
+
+    if expense.accountId == newAccountId:
+        balanceChange = newAmount - float(expense.amount)
+        db.Account.updateBalance(expense.accountId, balanceChange)
+    else:
+        db.Account.updateBalance(expense.accountId, float(expense.amount))
+        db.Account.updateBalance(newAccountId, -float(expense.amount))
+
+    expense.name = request.form.get('name')
+    expense.amount = newAmount
+    expense.date = request.form.get('date')
+    expense.accountId = newAccountId
+
+    expense.edit()
     return redirect(url_for('expenses'))
 
 
@@ -157,7 +169,8 @@ def deleteExpense(expenseId: int) -> str:
 def deleteExpenseFromDatabaseAndUpdateAccountBalance(expenseId: int) -> str:
     "Delete expense by its ID and update account balance. Redirect to 'expenses' route."
     expense = db.Expense.importFromDatabase(expenseId)
-    expense.deleteFromDatabaseAndUpdateAccountBalance()
+    db.Account.updateBalance(expense.accountId, float(expense.amount))
+    expense.deleteFromDatabase()
     return redirect(url_for('expenses'))
 
 
@@ -185,6 +198,7 @@ def addIncome() -> str:
     date = request.form.get('date')
     accountId = request.form.get('account')
     income = db.Income(name, amount, accountId, date)
+    db.Account.updateBalance(accountId, float(amount))
     income.addToDatabase()
     return redirect(url_for('incomes'))
 
@@ -200,12 +214,23 @@ def renderEditIncomeSite(incomeId: int) -> str:
 @app.route('/editIncome/<int:incomeId>', methods=['POST'])
 def editIncome(incomeId: int) -> str:
     "Update income by its ID. Redirect to 'incomes' route."
-    name = request.form.get('name')
-    amount = request.form.get('amount')
-    date = request.form.get('date')
-    account_id = request.form.get('account')
     income = db.Income.importFromDatabase(incomeId)
-    income.edit(name, amount, date, account_id)
+    newAmount = float(request.form.get('amount'))
+    newAccountId = request.form.get('account')
+
+    if income.accountId == newAccountId:
+        balanceChange = newAmount - float(income.amount)
+        db.Account.updateBalance(income.accountId, balanceChange)
+    else:
+        db.Account.updateBalance(income.accountId, -float(income.amount))
+        db.Account.updateBalance(newAccountId, float(income.amount))
+
+    income.name = request.form.get('name')
+    income.amount = newAmount
+    income.date = request.form.get('date')
+    income.accountId = newAccountId
+
+    income.edit()
     return redirect(url_for('incomes'))
 
 
@@ -221,7 +246,8 @@ def deleteIncomeFromDatabase(incomeId: int) -> str:
 def deleteIncomeFromDatabaseAndUpdateAccountBalance(incomeId: int) -> str:
     "Delete income by its ID and update account balance. Redirect to 'incomes' route."
     income = db.Income.importFromDatabase(incomeId)
-    income.deleteFromDatabaseAndUpdateAccountBalance()
+    db.Account.updateBalance(income.accountId, -float(income.amount))
+    income.deleteFromDatabase()
     return redirect(url_for('incomes'))
 
 

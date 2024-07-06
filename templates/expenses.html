@@ -13,7 +13,7 @@
     </tr>
     {% for expense in expenses %}
     {% for account in accounts %}
-    {% if expense.account_id == account.id %}
+    {% if expense.accountId == account.id %}
         <tr>
             <td>{{expense.name}}</td>
             <td>{{expense.amount}}</td>

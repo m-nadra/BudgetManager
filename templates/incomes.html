@@ -13,7 +13,7 @@
     </tr>
     {% for income in incomes %}
     {% for account in accounts %}
-    {% if income.account_id == account.id %}
+    {% if income.accountId == account.id %}
     <tr>
         <td>{{income.name}}</td>
         <td>{{income.amount}}</td>
