@@ -2,13 +2,12 @@
 
 from pydoc import classname
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Float, ForeignKey
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from sqlalchemy.exc import IntegrityError
 
 
-class Base:
+class Base(DeclarativeBase):
     """Contains common fields and methods, which are inherited by all classes."""
     id = Column(Integer, primary_key=True, autoincrement=True)
 
@@ -29,7 +28,7 @@ class Base:
         session = Session()
         try:
             objectToDelete = session.query(self.__class__).filter(
-                self.__class__.id == self.id).one()
+                self.__class__.id == self.id).one()  # TODO uzyc importFromDatabase
             if objectToDelete is None:
                 raise ValueError
             session.delete(objectToDelete)
@@ -49,7 +48,7 @@ class Base:
         """
         session = Session()
         try:
-            importedObject = session.query(cls).get(objectId)
+            importedObject = session.get(cls, objectId)
             if importedObject is None:
                 raise ValueError
             return importedObject
@@ -68,11 +67,15 @@ class Base:
         session.close()
         return records
 
-
-engine = create_engine('sqlite:///data.db', echo=True)
-Base = declarative_base(cls=Base)
-Base.metadata.create_all(engine)
-Session = sessionmaker(bind=engine)
+    @classmethod
+    def deleteAllFromDatabase(cls) -> None:
+        """Delete all records from the table."""
+        session = Session()
+        try:
+            session.query(cls).delete()
+            session.commit()
+        finally:
+            session.close()
 
 
 class Account(Base):
@@ -115,19 +118,21 @@ class Account(Base):
             session.close()
 
     @staticmethod
-    def updateBalance(accountId: int, balanceChange: float):
-        """Update balance of the account.
+    def updateBalance(accountId, balanceChange: float):
+        """This method upadate the balance ONLY in the database. After using this method
+        you have to import the object again to get the updated balance. 
+        Use it only when you are not gonna create object otherwise use edit() method.
 
         Args:
-            accountId (int): ID of the account to update.
             balanceChange (float): Amount of money to add or subtract from the account.
-            For adding money, use positive values.
-            For subtracting money, use negative values.
+            For adding money, use positive values. For subtracting money, use negative values.
         """
         session = Session()
         try:
-            account = session.query(Account).filter_by(id=accountId).one()
+            account = session.get(Account, accountId)
             account.balance += balanceChange
+            session.query(Account).filter(
+                Account.id == account.id).update({'balance': account.balance})
             session.commit()
         except Exception as e:
             session.rollback()
@@ -234,3 +239,8 @@ class Income(Base):
             raise err
         finally:
             session.close()
+
+
+engine = create_engine('sqlite:///data.db', echo=True)
+Session = sessionmaker(bind=engine)
+Base.metadata.create_all(engine)
