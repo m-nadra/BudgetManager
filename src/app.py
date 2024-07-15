@@ -102,7 +102,7 @@ def transferMoney() -> str:
 @app.route('/expenses', methods=['GET'])
 def expenses() -> str:
     "Render 'expenses.html' template. If an exception occurs, return 'expenses.html' template without any expenses data."
-    expensesList = db.Expense.getAll()
+    expensesList = db.Income.getAll()
     accountsList = db.Account.getAll()
     return render_template('expenses.html', expenses=expensesList, accounts=accountsList)
 
@@ -120,7 +120,7 @@ def addExpense() -> str:
     amount = request.form.get('amount')
     account_id = request.form.get('account')
     date = request.form.get('date')
-    expense = db.Expense(name, amount, account_id, date)
+    expense = db.Income(name, amount, account_id, date)
     db.Account.updateBalance(account_id, -float(amount))
     expense.addToDatabase()
     return redirect(url_for('expenses'))
@@ -129,7 +129,7 @@ def addExpense() -> str:
 @app.route('/editExpense/<int:expenseId>', methods=['GET'])
 def renderEditExpenseSite(expenseId: int) -> str:
     "Render 'edit_expense.html' template."
-    expense = db.Expense.importFromDatabase(expenseId)
+    expense = db.Income.importFromDatabase(expenseId)
     accounts = db.Account.getAll()
     return render_template('edit_expense.html', expense=expense, accounts=accounts)
 
@@ -137,7 +137,7 @@ def renderEditExpenseSite(expenseId: int) -> str:
 @app.route('/editExpense/<int:expenseId>', methods=['POST'])
 def editExpense(expenseId: int) -> str:
     "Edit expense by its ID. Redirect to 'expenses' route."
-    expense = db.Expense.importFromDatabase(expenseId)
+    expense = db.Income.importFromDatabase(expenseId)
     newAmount = float(request.form.get('amount'))
     newAccountId = request.form.get('account')
 
@@ -160,7 +160,7 @@ def editExpense(expenseId: int) -> str:
 @app.route('/deleteExpense/<int:expenseId>', methods=['GET'])
 def deleteExpense(expenseId: int) -> str:
     "Delete expense by its ID. Redirect to 'expenses' route."
-    expense = db.Expense.importFromDatabase(expenseId)
+    expense = db.Income.importFromDatabase(expenseId)
     expense.deleteFromDatabase()
     return redirect(url_for('expenses'))
 
@@ -168,7 +168,7 @@ def deleteExpense(expenseId: int) -> str:
 @app.route('/undoExpense/<int:expenseId>', methods=['GET'])
 def deleteExpenseFromDatabaseAndUpdateAccountBalance(expenseId: int) -> str:
     "Delete expense by its ID and update account balance. Redirect to 'expenses' route."
-    expense = db.Expense.importFromDatabase(expenseId)
+    expense = db.Income.importFromDatabase(expenseId)
     db.Account.updateBalance(expense.accountId, float(expense.amount))
     expense.deleteFromDatabase()
     return redirect(url_for('expenses'))

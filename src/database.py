@@ -20,8 +20,6 @@ class Base(DeclarativeBase):
         except IntegrityError as err:
             session.rollback()
             raise err
-        finally:
-            session.close()
 
     def deleteFromDatabase(self) -> None:
         """Delete object from the database."""
@@ -33,8 +31,9 @@ class Base(DeclarativeBase):
                 raise ValueError
             session.delete(objectToDelete)
             session.commit()
-        finally:
-            session.close()
+        except Exception as e:
+            session.rollback()
+            raise e
 
     @classmethod
     def importFromDatabase(cls, objectId: int) -> 'classname':
@@ -47,13 +46,11 @@ class Base(DeclarativeBase):
             classname: Object in database.
         """
         session = Session()
-        try:
-            importedObject = session.get(cls, objectId)
-            if importedObject is None:
-                raise ValueError
-            return importedObject
-        finally:
-            session.close()
+
+        importedObject = session.get(cls, objectId)
+        if importedObject is None:
+            raise ValueError
+        return importedObject
 
     @classmethod
     def getAll(cls) -> list:
@@ -64,7 +61,6 @@ class Base(DeclarativeBase):
         """
         session = Session()
         records = session.query(cls).all()
-        session.close()
         return records
 
     @classmethod
@@ -74,8 +70,9 @@ class Base(DeclarativeBase):
         try:
             session.query(cls).delete()
             session.commit()
-        finally:
-            session.close()
+        except Exception as e:
+            session.rollback()
+            raise e
 
 
 class Account(Base):
@@ -114,8 +111,6 @@ class Account(Base):
         except IntegrityError as err:
             session.rollback()
             raise err
-        finally:
-            session.close()
 
     @staticmethod
     def updateBalance(accountId, balanceChange: float):
@@ -137,8 +132,6 @@ class Account(Base):
         except Exception as e:
             session.rollback()
             raise e
-        finally:
-            session.close()
 
     @staticmethod
     def transferMoney(sourceId: int, destinationId: int, amount: float) -> None:
@@ -157,11 +150,9 @@ class Account(Base):
         except Exception as e:
             session.rollback()
             raise e
-        finally:
-            session.close()
 
 
-class Expense(Base):
+class Income(Base):
     """Represents an expense table in the database."""
     __tablename__ = 'expenses'
     name = Column(String, nullable=False)
@@ -191,54 +182,12 @@ class Expense(Base):
         """
         session = Session()
         try:
-            session.query(Expense).filter(Expense.id == self.id).update(
-                {'name': self.name, 'amount': self.amount, 'date': self.date, 'accountId': self.accountId})
-            session.commit()
-        except IntegrityError as err:
-            session.rollback()
-            raise err
-        finally:
-            session.close()
-
-
-class Income(Base):
-    """Represents an income table in the database."""
-    __tablename__ = 'incomes'
-    name = Column(String, nullable=False)
-    amount = Column(Float, nullable=False)
-    accountId = Column(Integer, ForeignKey('accounts.id'), nullable=False)
-    date = Column(String, nullable=False)
-
-    def __init__(self, name: str, amount: float, accountId: int, date: str, id: int = None) -> None:
-        """Class constructor
-
-        Args:
-            name (str): Name of the income,
-            amount (float): Amount of the income,
-            accountId (int): Account ID of the income,
-            date (str): Date of the income,
-            id (int, optional): Income ID. Defaults to None. Database will assign it automatically.
-        """
-        self.id = id
-        self.name = name
-        self.amount = amount
-        self.accountId = accountId
-        self.date = date
-
-    def edit(self) -> None:
-        """Update the income in the database without changing account balance.
-        To do this use Account.updateBalance() method.
-        """
-        session = Session()
-        try:
             session.query(Income).filter(Income.id == self.id).update(
                 {'name': self.name, 'amount': self.amount, 'date': self.date, 'accountId': self.accountId})
             session.commit()
         except IntegrityError as err:
             session.rollback()
             raise err
-        finally:
-            session.close()
 
 
 engine = create_engine('sqlite:///data.db', echo=True)
