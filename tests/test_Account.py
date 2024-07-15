@@ -1,13 +1,20 @@
 import pytest
 from src.database import Account
+from src.database import RecordAlreadyExists
 
 
 @pytest.fixture
 def setup():
+    Account.deleteAllFromDatabase()
     account1 = Account('Test Account', 1000, 1)
     account1.addToDatabase()
     account2 = Account('Test Account 2', 2000, 2)
     account2.addToDatabase()
+    try:
+        account3 = Account('Test Account', 3000, 3)
+        account3.addToDatabase()
+    except RecordAlreadyExists:
+        pass
     yield
     Account.deleteAllFromDatabase()
 

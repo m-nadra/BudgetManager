@@ -4,6 +4,8 @@ from src.database import Income, Account
 
 @pytest.fixture
 def setup():
+    Income.deleteAllFromDatabase()
+    Account.deleteAllFromDatabase()
     expense1 = Income('Test Income', 100, 1, '2021-01-01')
     expense1.addToDatabase()
     expense2 = Income('Test Income 2', 200, 2, '2021-01-02')
