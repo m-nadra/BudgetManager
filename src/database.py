@@ -113,23 +113,25 @@ class Account(Base):
         self.balance = balance
 
     def edit(self, name: str, balance: float) -> None:
-        """Update the account in the database.
+        """Update object data and record in the database.
 
         Args:
             name (str): New name of the account.
             balance (float): New balance of the account.
         """
-        session = Session()
-        if self.name != name:  # Prevent blocking query when name is not changed
-            self.name = name
-        self.balance = balance
-        try:
-            session.query(Account).filter(Account.id == self.id).update(
-                {'name': self.name, 'balance': self.balance})
-            session.commit()
-        except IntegrityError as err:
-            session.rollback()
-            raise err
+        with dbConnection() as session:
+            try:
+                session.query(Account).filter(Account.id == self.id).update(
+                    {'name': name, 'balance': balance})
+                session.commit()
+                self.name = name
+                self.balance = balance
+            except IntegrityError:
+                session.rollback()
+                raise RecordAlreadyExists
+            except Exception:
+                session.rollback()
+                raise
 
     @staticmethod
     def updateBalance(accountId, balanceChange: float):
@@ -140,17 +142,21 @@ class Account(Base):
         Args:
             balanceChange (float): Amount of money to add or subtract from the account.
             For adding money, use positive values. For subtracting money, use negative values.
+
+        Raises:
+            RecordNotFound: If the account is not found in the database.
         """
-        session = Session()
-        try:
-            account = session.get(Account, accountId)
+        with dbConnection() as session:
+            account = Account.importFromDatabase(accountId)
             account.balance += balanceChange
-            session.query(Account).filter(
-                Account.id == account.id).update({'balance': account.balance})
-            session.commit()
-        except Exception as e:
-            session.rollback()
-            raise e
+
+            try:
+                session.query(Account).filter(
+                    Account.id == account.id).update({'balance': account.balance})
+                session.commit()
+            except Exception:
+                session.rollback()
+                raise
 
     @staticmethod
     def transferMoney(sourceId: int, destinationId: int, amount: float) -> None:
@@ -161,14 +167,14 @@ class Account(Base):
             destinationId (int): ID of account to transfer money to.
             amount (float): Amount of money to transfer.
         """
-        session = Session()
-        try:
-            Account.updateBalance(sourceId, -amount)
-            Account.updateBalance(destinationId, amount)
-            session.commit()
-        except Exception as e:
-            session.rollback()
-            raise e
+        with dbConnection() as session:
+            try:
+                Account.updateBalance(sourceId, -amount)
+                Account.updateBalance(destinationId, amount)
+                session.commit()
+            except Exception:
+                session.rollback()
+                raise
 
 
 class Expense(Base):
