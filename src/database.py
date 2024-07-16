@@ -201,18 +201,28 @@ class Expense(Base):
         self.accountId = accountId
         self.date = date
 
-    def edit(self) -> None:
+    def edit(self, name: str, amount: float, accountId: int, date: str) -> None:
         """Update the object in the database without changing account balance.
         To do this use Account.updateBalance() method.
+
+        Args:
+            name (str): New name of the expense.
+            amount (float): New amount of the expense.
+            accountId (int): New account ID of the expense.
+            date (str): New date of the expense.
         """
-        session = Session()
-        try:
-            session.query(Expense).filter(Expense.id == self.id).update(
-                {'name': self.name, 'amount': self.amount, 'date': self.date, 'accountId': self.accountId})
-            session.commit()
-        except IntegrityError as err:
-            session.rollback()
-            raise err
+        with dbConnection() as session:
+            try:
+                session.query(Expense).filter(Expense.id == self.id).update(
+                    {'name': name, 'amount': amount, 'date': date, 'accountId': accountId})
+                session.commit()
+                self.name = name
+                self.amount = amount
+                self.accountId = accountId
+                self.date = date
+            except Exception:
+                session.rollback()
+                raise
 
 
 class Income(Base):
@@ -239,20 +249,25 @@ class Income(Base):
         self.accountId = accountId
         self.date = date
 
-    def edit(self) -> None:
+    def edit(self, name: str, amount: float, accountId: int, date: str) -> None:
         """Update the object in the database without changing account balance.
         To do this use Account.updateBalance() method.
+
+        Args:
+            name (str): New name of the expense.
+            amount (float): New amount of the expense.
+            accountId (int): New account ID of the expense.
+            date (str): New date of the expense.
         """
-        session = Session()
-        try:
-            session.query(Income).filter(Income.id == self.id).update(
-                {'name': self.name, 'amount': self.amount, 'date': self.date, 'accountId': self.accountId})
-            session.commit()
-        except IntegrityError as err:
-            session.rollback()
-            raise err
-
-
-engine = create_engine('sqlite:///data.db', echo=True)
-Session = sessionmaker(bind=engine)
-Base.metadata.create_all(engine)
+        with dbConnection() as session:
+            try:
+                session.query(Income).filter(Income.id == self.id).update(
+                    {'name': name, 'amount': amount, 'date': date, 'accountId': accountId})
+                session.commit()
+                self.name = name
+                self.amount = amount
+                self.accountId = accountId
+                self.date = date
+            except Exception:
+                session.rollback()
+                raise

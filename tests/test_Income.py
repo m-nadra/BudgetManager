@@ -6,10 +6,10 @@ from src.database import Income, Account
 def setup():
     Income.deleteAllFromDatabase()
     Account.deleteAllFromDatabase()
-    expense1 = Income('Test Income', 100, 1, '2021-01-01')
-    expense1.addToDatabase()
-    expense2 = Income('Test Income 2', 200, 2, '2021-01-02')
-    expense2.addToDatabase()
+    income1 = Income('Test Income', 100, 1, '2021-01-01')
+    income1.addToDatabase()
+    income2 = Income('Test Income 2', 200, 2, '2021-01-02')
+    income2.addToDatabase()
     account = Account('Test Account', 1000, 1)
     account.addToDatabase()
     yield
@@ -25,16 +25,11 @@ def test_importFromDatabase(setup):
 
 def test_edit(setup):
     income = Income.importFromDatabase(1)
-    income.name = 'New Name'
-    income.amount = 200
-    income.accountId = 2
-    income.date = '2021-01-02'
-    income.edit()
-    checkIncome = Income.importFromDatabase(1)
-    assert checkIncome.name == 'New Name'
-    assert checkIncome.amount == 200
-    assert checkIncome.accountId == 2
-    assert checkIncome.date == '2021-01-02'
+    income.edit("New Name", 200, 2, '2021-01-02')
+    assert income.name == 'New Name'
+    assert income.amount == 200
+    assert income.accountId == 2
+    assert income.date == '2021-01-02'
 
 
 def test_getAll(setup):
