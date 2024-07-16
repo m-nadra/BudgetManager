@@ -6,12 +6,9 @@ from src.database import Expense, Account
 def setup():
     Expense.deleteAllFromDatabase()
     Account.deleteAllFromDatabase()
-    expense1 = Expense('Test Expense', 100, 1, '2021-01-01')
-    expense1.addToDatabase()
-    expense2 = Expense('Test Expense 2', 200, 2, '2021-01-02')
-    expense2.addToDatabase()
-    account = Account('Test Account', 1000, 1)
-    account.addToDatabase()
+    Expense('Test Expense', 100, 1, '2021-01-01')
+    Expense('Test Expense 2', 200, 2, '2021-01-02')
+    Account('Test Account', 1000, 1)
     yield
     Expense.deleteAllFromDatabase()
     Account.deleteAllFromDatabase()

@@ -7,10 +7,8 @@ from src.database import RecordAlreadyExists, RecordNotFound
 def setup():
     """Create test accounts in the database."""
     Account.deleteAllFromDatabase()
-    account1 = Account('Test Account', 1000, 1)
-    account1.addToDatabase()
-    account2 = Account('Test Account 2', 2000, 2)
-    account2.addToDatabase()
+    Account('Test Account', 1000, 1)
+    Account('Test Account 2', 2000, 2)
     yield
     Account.deleteAllFromDatabase()
 
@@ -27,14 +25,12 @@ def test_addToDatabaseUnwantedRecords(setup):
     """Test unwanted records in the database."""
     try:
         # Test for account with not unique name
-        account3 = Account('Test Account', 3000, 3)
-        account3.addToDatabase()
+        Account('Test Account', 3000, 3)
     except RecordAlreadyExists:
         pass
     try:
         # Test for account with existing id
-        account4 = Account('Test Account', 3000, 1)
-        account4.addToDatabase()
+        Account('Test Account', 3000, 1)
     except RecordAlreadyExists:
         pass
 

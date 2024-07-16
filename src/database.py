@@ -111,6 +111,7 @@ class Account(Base):
         self.id = id
         self.name = name
         self.balance = balance
+        self.addToDatabase()
 
     def edit(self, name: str, balance: float) -> None:
         """Update object data and record in the database.
@@ -200,6 +201,7 @@ class Expense(Base):
         self.amount = amount
         self.accountId = accountId
         self.date = date
+        self.addToDatabase()
 
     def edit(self, name: str, amount: float, accountId: int, date: str) -> None:
         """Update the object in the database without changing account balance.
@@ -234,7 +236,7 @@ class Income(Base):
     date = Column(String, nullable=False)
 
     def __init__(self, name: str, amount: float, accountId: int, date: str, id: int = None) -> None:
-        """Class constructor.
+        """Add record to database.
 
         Args:
             name (str): Name of the expense.
@@ -248,6 +250,7 @@ class Income(Base):
         self.amount = amount
         self.accountId = accountId
         self.date = date
+        self.addToDatabase()
 
     def edit(self, name: str, amount: float, accountId: int, date: str) -> None:
         """Update the object in the database without changing account balance.

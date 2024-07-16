@@ -6,12 +6,9 @@ from src.database import Income, Account
 def setup():
     Income.deleteAllFromDatabase()
     Account.deleteAllFromDatabase()
-    income1 = Income('Test Income', 100, 1, '2021-01-01')
-    income1.addToDatabase()
-    income2 = Income('Test Income 2', 200, 2, '2021-01-02')
-    income2.addToDatabase()
-    account = Account('Test Account', 1000, 1)
-    account.addToDatabase()
+    Income('Test Income', 100, 1, '2021-01-01')
+    Income('Test Income 2', 200, 2, '2021-01-02')
+    Account('Test Account', 1000, 1)
     yield
     Income.deleteAllFromDatabase()
     Account.deleteAllFromDatabase()
