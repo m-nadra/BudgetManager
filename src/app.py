@@ -32,7 +32,7 @@ def accounts() -> str:
 
 @app.route('/addAccount', methods=['GET'])
 def renderAddAccountSite() -> str:
-    "Renders the 'add_account.html' template."
+    """Renders the 'add_account.html' template."""
     return render_template('add_account.html')
 
 
@@ -53,7 +53,7 @@ def addAccount() -> str:
 
 @app.route('/editAccount/<int:accountId>', methods=['GET'])
 def renderEditAccountSite(accountId: int) -> str:
-    "Render 'edit_account.html' template."
+    """Render 'edit_account.html' template."""
     account = Account.importFromDatabase(accountId)
     return render_template('edit_account.html', account=account)
 
@@ -76,7 +76,7 @@ def editAccount(accountId: int) -> str:
 
 @app.route('/deleteAccount/<int:accountId>', methods=['GET'])
 def deleteAccount(accountId: int) -> str:
-    "Delete account by its ID. Redirect to 'accounts' route."
+    """Delete account by its ID. Redirect to 'accounts' route."""
     account = Account.importFromDatabase(accountId)
     account.deleteFromDatabase()
     return redirect(url_for('accounts'))
@@ -84,14 +84,14 @@ def deleteAccount(accountId: int) -> str:
 
 @app.route('/transferMoney', methods=['GET'])
 def renderTransferMoneySite() -> str:
-    "Render 'transfer_money.html' template."
+    """Render 'transfer_money.html' template."""
     accounts = Account.getAll()
     return render_template('transfer_money.html', accounts=accounts)
 
 
 @app.route('/transferMoney/', methods=['POST'])
 def transferMoney() -> str:
-    "Transfer money between accounts. Redirect to 'accounts' route."
+    """Transfer money between accounts. Redirect to 'accounts' route."""
     sourceId = request.form.get('from_account')
     destinationId = request.form.get('to_account')
     amount = float(request.form.get('amount'))
@@ -101,7 +101,7 @@ def transferMoney() -> str:
 
 @app.route('/expenses', methods=['GET'])
 def expenses() -> str:
-    "Render 'expenses.html' template. If an exception occurs, return 'expenses.html' template without any expenses data."
+    """Render 'expenses.html' template. If an exception occurs, return 'expenses.html' template without any expenses data."""
     expensesList = Expense.getAll()
     accountsList = Account.getAll()
     return render_template('expenses.html', expenses=expensesList, accounts=accountsList)
@@ -109,13 +109,13 @@ def expenses() -> str:
 
 @app.route('/addExpense', methods=['GET'])
 def renderAddExpenseSite() -> str:
-    "Render 'add_expense.html' template."
+    """Render 'add_expense.html' template."""
     return render_template('add_expense.html', accounts=Account.getAll())
 
 
 @app.route('/addExpense', methods=['POST'])
 def addExpense() -> str:
-    "Add expense to database and redirect to 'expenses' route."
+    """Add expense to database and redirect to 'expenses' route."""
     name = request.form.get('name')
     amount = request.form.get('amount')
     account_id = request.form.get('account')
@@ -127,7 +127,7 @@ def addExpense() -> str:
 
 @app.route('/editExpense/<int:expenseId>', methods=['GET'])
 def renderEditExpenseSite(expenseId: int) -> str:
-    "Render 'edit_expense.html' template."
+    """Render 'edit_expense.html' template."""
     expense = Expense.importFromDatabase(expenseId)
     accounts = Account.getAll()
     return render_template('edit_expense.html', expense=expense, accounts=accounts)
@@ -135,7 +135,7 @@ def renderEditExpenseSite(expenseId: int) -> str:
 
 @app.route('/editExpense/<int:expenseId>', methods=['POST'])
 def editExpense(expenseId: int) -> str:
-    "Edit expense by its ID. Redirect to 'expenses' route."
+    """Edit expense by its ID. Redirect to 'expenses' route."""
     expense = Expense.importFromDatabase(expenseId)
     newName = request.form.get('name')
     newDate = request.form.get('date')
@@ -154,7 +154,7 @@ def editExpense(expenseId: int) -> str:
 
 @app.route('/deleteExpense/<int:expenseId>', methods=['GET'])
 def deleteExpense(expenseId: int) -> str:
-    "Delete expense by its ID. Redirect to 'expenses' route."
+    """Delete expense by its ID. Redirect to 'expenses' route."""
     expense = Expense.importFromDatabase(expenseId)
     expense.deleteFromDatabase()
     return redirect(url_for('expenses'))
@@ -162,7 +162,7 @@ def deleteExpense(expenseId: int) -> str:
 
 @app.route('/undoExpense/<int:expenseId>', methods=['GET'])
 def deleteExpenseFromDatabaseAndUpdateAccountBalance(expenseId: int) -> str:
-    "Delete expense by its ID and update account balance. Redirect to 'expenses' route."
+    """Delete expense by its ID and update account balance. Redirect to 'expenses' route."""
     expense = Expense.importFromDatabase(expenseId)
     Account.updateBalance(expense.accountId, float(expense.amount))
     expense.deleteFromDatabase()
@@ -180,14 +180,14 @@ def incomes() -> str:
 
 @app.route('/addIncome', methods=['GET'])
 def renderAddIncomeSite() -> str:
-    "Render 'add_income.html' template."
+    """Render 'add_income.html' template."""
     accountsList = Account.getAll()
     return render_template('add_income.html', accounts=accountsList)
 
 
 @app.route('/addIncome', methods=['POST'])
 def addIncome() -> str:
-    "Get data from form, add income to database and redirect to 'incomes' route."
+    """Get data from form, add income to database and redirect to 'incomes' route."""
     name = request.form.get('name')
     amount = request.form.get('amount')
     date = request.form.get('date')
@@ -199,7 +199,7 @@ def addIncome() -> str:
 
 @app.route('/editIncome/<int:incomeId>', methods=['GET'])
 def renderEditIncomeSite(incomeId: int) -> str:
-    "Render 'edit_income.html' template."
+    """Render 'edit_income.html' template."""
     income = Income.importFromDatabase(incomeId)
     accouts = Account.getAll()
     return render_template('edit_income.html', income=income, accounts=accouts)
@@ -207,7 +207,7 @@ def renderEditIncomeSite(incomeId: int) -> str:
 
 @app.route('/editIncome/<int:incomeId>', methods=['POST'])
 def editIncome(incomeId: int) -> str:
-    "Update income by its ID. Redirect to 'incomes' route."
+    """Update income by its ID. Redirect to 'incomes' route."""
     income = Income.importFromDatabase(incomeId)
     newName = request.form.get('name')
     newDate = request.form.get('date')
@@ -226,7 +226,7 @@ def editIncome(incomeId: int) -> str:
 
 @app.route('/deleteIncomeFromDatabase/<int:incomeId>', methods=['GET'])
 def deleteIncomeFromDatabase(incomeId: int) -> str:
-    "Delete income by its ID. Redirect to 'incomes' route."
+    """Delete income by its ID. Redirect to 'incomes' route."""
     income = Income.importFromDatabase(incomeId)
     income.deleteFromDatabase()
     return redirect(url_for('incomes'))
@@ -234,7 +234,7 @@ def deleteIncomeFromDatabase(incomeId: int) -> str:
 
 @app.route('/deleteIncomeFromDatabaseAndUpdateAccountBalance/<int:incomeId>', methods=['GET'])
 def deleteIncomeFromDatabaseAndUpdateAccountBalance(incomeId: int) -> str:
-    "Delete income by its ID and update account balance. Redirect to 'incomes' route."
+    """Delete income by its ID and update account balance. Redirect to 'incomes' route."""
     income = Income.importFromDatabase(incomeId)
     Account.updateBalance(income.accountId, -float(income.amount))
     income.deleteFromDatabase()
@@ -242,4 +242,4 @@ def deleteIncomeFromDatabaseAndUpdateAccountBalance(incomeId: int) -> str:
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()

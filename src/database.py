@@ -130,9 +130,6 @@ class Account(Base):
             except IntegrityError:
                 session.rollback()
                 raise RecordAlreadyExists
-            except Exception:
-                session.rollback()
-                raise
 
     @staticmethod
     def updateBalance(accountId, balanceChange: float):
@@ -150,14 +147,9 @@ class Account(Base):
         with dbConnection() as session:
             account = Account.importFromDatabase(accountId)
             account.balance += balanceChange
-
-            try:
-                session.query(Account).filter(
-                    Account.id == account.id).update({'balance': account.balance})
-                session.commit()
-            except Exception:
-                session.rollback()
-                raise
+            session.query(Account).filter(
+                Account.id == account.id).update({'balance': account.balance})
+            session.commit()
 
     @staticmethod
     def transferMoney(sourceId: int, destinationId: int, amount: float) -> None:
@@ -169,13 +161,9 @@ class Account(Base):
             amount (float): Amount of money to transfer.
         """
         with dbConnection() as session:
-            try:
-                Account.updateBalance(sourceId, -amount)
-                Account.updateBalance(destinationId, amount)
-                session.commit()
-            except Exception:
-                session.rollback()
-                raise
+            Account.updateBalance(sourceId, -amount)
+            Account.updateBalance(destinationId, amount)
+            session.commit()
 
 
 class Expense(Base):
@@ -214,17 +202,13 @@ class Expense(Base):
             date (str): New date of the expense.
         """
         with dbConnection() as session:
-            try:
-                session.query(Expense).filter(Expense.id == self.id).update(
-                    {'name': name, 'amount': amount, 'date': date, 'accountId': accountId})
-                session.commit()
-                self.name = name
-                self.amount = amount
-                self.accountId = accountId
-                self.date = date
-            except Exception:
-                session.rollback()
-                raise
+            session.query(Expense).filter(Expense.id == self.id).update(
+                {'name': name, 'amount': amount, 'date': date, 'accountId': accountId})
+            session.commit()
+            self.name = name
+            self.amount = amount
+            self.accountId = accountId
+            self.date = date
 
 
 class Income(Base):
@@ -263,14 +247,10 @@ class Income(Base):
             date (str): New date of the expense.
         """
         with dbConnection() as session:
-            try:
-                session.query(Income).filter(Income.id == self.id).update(
-                    {'name': name, 'amount': amount, 'date': date, 'accountId': accountId})
-                session.commit()
-                self.name = name
-                self.amount = amount
-                self.accountId = accountId
-                self.date = date
-            except Exception:
-                session.rollback()
-                raise
+            session.query(Income).filter(Income.id == self.id).update(
+                {'name': name, 'amount': amount, 'date': date, 'accountId': accountId})
+            session.commit()
+            self.name = name
+            self.amount = amount
+            self.accountId = accountId
+            self.date = date
