@@ -6,8 +6,8 @@ It uses a database module to interact with the underlying database.
 """
 
 from flask import Flask, render_template, request, redirect, url_for
-from database import Account, Expense, Income
-from database import RecordAlreadyExists
+from BudgetManager.database.database import Account, Expense, Income
+from BudgetManager.database.database import RecordAlreadyExists
 
 app = Flask(__name__)
 

@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy import Column, Integer, String, Float, ForeignKey
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from sqlalchemy.exc import IntegrityError
-
+import os
 
 class RecordNotFound(Exception):
     """Raised when a record is not found in the database."""
@@ -21,7 +21,9 @@ class dbConnection:
     """Context manager for database connection. It is used to create a session object."""
 
     def __init__(self):
-        self.engine = create_engine('sqlite:///data.db')
+        db_directory = os.path.dirname(os.path.abspath(__file__))
+        db_path = os.path.join(db_directory, 'data.db')
+        self.engine = create_engine(f'sqlite:///{db_path}')
         self.Session = sessionmaker(bind=self.engine)
         Base.metadata.create_all(self.engine)
 

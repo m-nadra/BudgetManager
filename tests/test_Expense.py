@@ -1,5 +1,5 @@
 import pytest
-from src.database import Expense, Account
+from BudgetManager.database import Expense, Account
 
 
 @pytest.fixture

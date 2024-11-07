@@ -1,6 +1,6 @@
 import pytest
-from src.database import Account
-from src.database import RecordAlreadyExists, RecordNotFound
+from BudgetManager.database import Account
+from BudgetManager.database import RecordAlreadyExists, RecordNotFound
 
 
 @pytest.fixture
